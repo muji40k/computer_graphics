@@ -1,0 +1,8 @@
+**/*.exe
+**/*.o
+**/*tmp*
+**/out
+**/__pycache__
+**/.vscode
+**/.ccls*
+
