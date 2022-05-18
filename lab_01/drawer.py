@@ -40,7 +40,7 @@ class Drawer():
         return [int(scales[i] * moved[i] + center_screen[i]) 
                 if None is not scales[i] else int(moved[i] + center_screen[i])
                 for i in range(2)]
-        
+
 
     def get_axes(self, is_equal=True):
         width = self.target.winfo_width()

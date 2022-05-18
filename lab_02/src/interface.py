@@ -20,8 +20,8 @@ class Ui(tk.Tk):
     _text_frame_rotate = "Поворот"
 
     _text_lable_task = "Программа, выполняющая преобразования\nна плоскости"
-    _text_label_current_dot = "Введите координаты точки преобразования"
-    _text_label_move = "Укажите новое положение точки преобразования"
+    _text_label_current_dot = "Введите координаты центра преобразования"
+    _text_label_move = "Укажите новое положение центра преобразования"
     _text_label_scale = "Укажите коэффициенты масштабирования\nпо каждой из осей"
     _text_label_rotate = "Укажите угол поворота\n(отрицательный - " \
                          + "по часовой стрелке,\nположительный - против)"
@@ -36,7 +36,7 @@ class Ui(tk.Tk):
 
     _text_error_empty = "Ввод не может быть пустым\n"
 
-    _text_error_input_cords = "Координаты точки задаются вещественными " \
+    _text_error_input_cords = "Координаты точки задаются целыми " \
                               + "числами\n"
     _text_error_input_scales = "Коэффициенты масштабирования задаются " \
                                + "вещественными числами\n"
@@ -385,7 +385,7 @@ class Ui(tk.Tk):
         rc = _get_input_from_entries(self.entries_current_dot, buffer)
 
         if (OK == rc):
-            rc = _input_to_double(buffer, center[0])
+            rc = _input_to_type(buffer, center[0], int)
 
         if (OK == rc):
             transformation.point_scale(center[0], [0, 0], [1, -1])
@@ -402,7 +402,7 @@ class Ui(tk.Tk):
             rc = _get_input_from_entries(self.entries_move, buffer)
 
             if (OK == rc):
-                rc = _input_to_double(buffer, center[1])
+                rc = _input_to_type(buffer, center[1], int)
 
             if (OK == rc):
                 transformation.point_scale(center[1], [0, 0], [1, -1])
@@ -473,7 +473,7 @@ class Ui(tk.Tk):
             rc = FAILURE
 
         if (OK == rc):
-            rc = _input_to_double(buffer, center)
+            rc = _input_to_type(buffer, center, int)
 
         if (ERROR_NON_DOUBLE_INPUT == rc):
             self.write_message((self._text_error_header 
@@ -498,7 +498,9 @@ class Ui(tk.Tk):
             rc = FAILURE
 
         if (OK == rc):
-            rc = _input_to_double(buffer, input_data)
+            rc = _input_to_type(buffer, input_data, int 
+                                if self._command_move == self.chosen_transform.get() 
+                                else float)
 
         if (ERROR_NON_DOUBLE_INPUT == rc):
             self.write_message(self._text_errors_input[self.chosen_transform.get()]
@@ -568,13 +570,13 @@ def _get_input_from_entries(entries: list[tk.Entry], out: list[str]) -> int:
 
     return OK
 
-def _input_to_double(input_values: list[str], out: list[float]) -> int:
+def _input_to_type(input_values: list[str], out: list[float], func) -> int:
     if (0 != len(out)):
         return ERROR_NON_EMPTY
 
     for value in input_values:
         try:
-            tmp = float(value)
+            tmp = func(value)
             out.append(tmp)
         except ValueError:
             return ERROR_NON_DOUBLE_INPUT
@@ -586,18 +588,9 @@ def _create_ellipse(a: float, b: float) -> list[list[float]]:
     angle = 0
     out = []
 
-    ab = a * b
-    a_square = a ** 2
-    b_square = b ** 2
-
     while (2 * math.pi > angle):
-        sin = math.sin(angle)
-        cos = math.cos(angle)
-
-        r = ab / math.sqrt(a_square * (sin ** 2) 
-                           + b_square * (cos ** 2))
-
-        out.append([round(r * cos, 0), round(r * sin, 0)])
+        out.append([round(a * math.cos(angle), 0), 
+                    round(b * math.sin(angle), 0)])
 
         angle += step
 
