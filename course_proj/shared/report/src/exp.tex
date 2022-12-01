@@ -1,0 +1,185 @@
+\section{Экспериментальная часть}
+В данном разеделе будут приедены примеры работы программа, а также проведен
+сравнительный анализ адгоритмов при различных ситуациях на основе полученных
+данных.
+
+\subsection{Демонстрация работы программы}
+На рисунках \ref{main_menu} -- \ref{fmeasure} представлены скриншоты,
+демонстрирующие работоспособность программы.
+
+\begin{figure}[!h]
+    \includegraphics[width=\textwidth]{menu.png}
+    \caption{Демонстрация главного меню программы}
+    \label{main_menu}
+\end{figure}
+
+\begin{figure}[!h]
+    \includegraphics[width=\textwidth]{user_sort.png}
+    \caption{Демонстрация сортировки массива, введенного пользователем}
+    \label{user_sort}
+\end{figure}
+\pagebreak
+
+\begin{figure}[!h]
+    \includegraphics[width=\textwidth]{test.png}
+    \caption{Демонстрация тестирования функции сортироки}
+    \label{ftest}
+\end{figure}
+\pagebreak
+
+\begin{figure}[!h]
+    \includegraphics[width=\textwidth]{measure.png}
+    \caption{Демонстрация проведения замера процессорного времени функции
+             сортироки}
+    \label{fmeasure}
+\end{figure}
+
+\subsection{Технические характеристики}
+
+Технические характеристики устройства, на котором выполнялось тестирование.
+
+\begin{itemize}
+    \item Операционная система: Manjaro 5.15 \cite{Manjaro} Linux \cite{Linux} x86\_64.
+    \item Память: 16 Гб.
+    \item Процессор: AMD Ryzen™ 5 4600H CPU @ 3.0G ГГц \cite{AMD_CPU}.
+\end{itemize}
+
+При тестировании ноутбук был включен в сеть электропитания. Во время
+тестирования ноутбук был нагружен только встроенными приложениями окружения,
+а также системой тестирования.
+
+\subsection{Время выполнения реализаций алгоритмов}
+
+На рисунках \ref{graph_best}, \ref{graph_worst} и \ref{graph_rand} представлены
+зависимости времени выполнения реализаций алгоритмов сортировки в лучшем,
+худшем и произвольном случаях соответственно.
+
+\begin{figure}[!h]
+\begin{tikzpicture}
+\begin{axis}[axis lines=left,
+             width=0.9\textwidth,
+             height=0.4\textheight,
+             xlabel={Размер массива},
+             ylabel={Время (мс)},
+             xmin=10, xmax=1000,
+             legend pos=north west,
+             ymajorgrids=true,
+             xmajorgrids=true,
+             grid style=dashed]
+\addplot table [domain=10:1000,
+                x=n,
+                y=tm,
+                col sep=comma,
+                mark=none]
+         {csv/m_gnome_asc.csv};
+\addlegendentry{Гномья сортировка}
+\addplot table [domain=10:1000,
+                x=n,
+                y=tm,
+                col sep=comma,
+                mark=none]
+         {csv/m_shaker_asc.csv};
+\addlegendentry{Сортировка перемешиванием}
+\addplot table [domain=10:1000,
+                x=n,
+                y=tm,
+                col sep=comma,
+                mark=none]
+         {csv/m_shell_asc.csv};
+\addlegendentry{Сортировка Шелла}
+\end{axis}
+\end{tikzpicture}
+\caption{Замеры времени работы реализаций алгоритмов в лучшем случае (упорядоченный массив)}
+\label{graph_best}
+\end{figure}
+
+\begin{figure}[!h]
+\begin{tikzpicture}
+\begin{axis}[axis lines=left,
+             width=0.9\textwidth,
+             height=0.4\textheight,
+             xlabel={Размер массива},
+             ylabel={Время (мс)},
+             xmin=10, xmax=1000,
+             legend pos=north west,
+             ymajorgrids=true,
+             xmajorgrids=true,
+             grid style=dashed]
+\addplot table [domain=10:1000,
+                x=n,
+                y=tm,
+                col sep=comma,
+                mark=none]
+         {csv/m_gnome_desc.csv};
+\addlegendentry{Гномья сортировка}
+\addplot table [domain=10:1000,
+                x=n,
+                y=tm,
+                col sep=comma,
+                mark=none]
+         {csv/m_shaker_desc.csv};
+\addlegendentry{Сортировка перемешиванием}
+\addplot table [domain=10:1000,
+                x=n,
+                y=tm,
+                col sep=comma,
+                mark=none]
+         {csv/m_shell_desc.csv};
+\addlegendentry{Сортировка Шелла}
+\end{axis}
+\end{tikzpicture}
+\caption{Замеры времени работы реализаций алгоритмов в худшем случае (обратно упорядоченный массив)}
+\label{graph_worst}
+\end{figure}
+\pagebreak
+
+\begin{figure}[!h]
+\begin{tikzpicture}
+\begin{axis}[axis lines=left,
+             width=0.9\textwidth,
+             height=0.4\textheight,
+             xlabel={Размер массива},
+             ylabel={Время (мс)},
+             xmin=10, xmax=1000,
+             legend pos=north west,
+             ymajorgrids=true,
+             xmajorgrids=true,
+             grid style=dashed]
+\addplot table [domain=10:1000,
+                x=n,
+                y=tm,
+                col sep=comma,
+                mark=none]
+         {csv/m_gnome_rand.csv};
+\addlegendentry{Гномья сортировка}
+\addplot table [domain=10:1000,
+                x=n,
+                y=tm,
+                col sep=comma,
+                mark=none]
+         {csv/m_shaker_rand.csv};
+\addlegendentry{Сортировка перемешиванием}
+\addplot table [domain=10:1000,
+                x=n,
+                y=tm,
+                col sep=comma,
+                mark=none]
+         {csv/m_shell_rand.csv};
+\addlegendentry{Сортировка Шелла}
+\end{axis}
+\end{tikzpicture}
+\caption{Замеры времени работы реализаций алгоритмов для произвольного массива}
+\label{graph_rand}
+\end{figure}
+
+\subsection*{Вывод}
+По результатам замеров было выявлено, что реализация алгоритма сортировки Шелла
+показывает более низкие затраты времени в случаях упорядоченного по убыванию и
+произвольного массивов, за ним идет алгоритм сортировки перемешиванием и гномья
+соритровка соответственно. Однако в случае упорядоченного набора данных
+результаты замеров для сортировки Шелла оказались более высокими, чем у
+остальных. В данном случае не было замечено различий во времени работы
+реализаций сортировки перемешиванием и гномьей сортировки.
+
+\pagebreak
+

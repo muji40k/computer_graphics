@@ -1,0 +1,205 @@
+\section{Конструкторская часть}
+В данном разделе будут рассмотрены требования к программному обеспечению,
+некоторые расчетные соотношения и схемы разработанных алгоритмов.
+
+\subsection{Требования к программному обеспечению}
+Программа должна предоставлять следующий функционал:
+\begin{itemize}
+    \item возможность интерактивного изменения положения объектов и источников
+          света в сцене;
+    \item возможность интерактивного добавления/удаления объектов в сцене;
+    \item возможность интерактивного изменения свойств объектов (коэффициент
+          восприятия света, коэффициент преломления, тип материала оюъекта,
+          интенсивность и цвет излучения);
+    \item возможность интерактивного масштабирования и поворота объектов сцены.
+\end{itemize}
+\vspace{\baselineskip}
+
+К программе предоставляются следующие требования:
+\begin{itemize}
+    \item программа должна корректно реагировать на любые действия пользователя;
+    \item программа должна предоставлять приемлемое время отклика
+          (не более 1 сек) при работе в интерактивном режиме.
+\end{itemize}
+
+\subsection{Расчет лучей на поверхности тела}
+Выражение для нахождения отраженного $w_{re}$ и преломленного $w_r$ лучей, могут
+быть найдены при помощи заданных лучей падения $w_i$ и нормали $n$
+(рисунок \ref{fig:edge_ray}).
+
+Для упрощения вычислений работа будет производиться с единичными векторами
+$\widehat{w_{re}}$, $\widehat{w_r}$, $\widehat{w_i}$ и $\widehat{n}$.
+
+\subsubsection*{Отраженный луч}
+Отраженный луч может быть представлен в виде комбинации векторов падения и
+нормали
+\[ \widehat{w_{re}} = \alpha \widehat{w_i} + \beta \widehat{n}. \]
+
+Из равенства углов падения и отражения:
+\[ \widehat{w_{re}} \widehat{n} = \widehat{w_i} \widehat{n}
+   = \alpha \widehat{w_i} \widehat{n} + \beta \widehat{n}^2
+   = \alpha \widehat{w_i} \widehat{n} + \beta \]
+
+\[ \beta = \widehat{w_i} \widehat{n} - \alpha \widehat{w_i} \widehat{n}. \]
+
+Так как вектора единичные
+\begin{align*}
+    |\widehat{w_{re}}| & = |\widehat{w_i}| = 1 \quad \uparrow^2 \\
+    |\widehat{w_{re}}|^2 & = |\widehat{w_i}|^2 = 1,
+\end{align*}
+
+\begin{align*}
+    1 & = {w_{re}}^2 = (\alpha \widehat{w_i} + \beta \widehat{n})^2
+        = \alpha^2 \widehat{w_i}^2 + 2 \alpha \beta \widehat{w_i} \widehat{n}
+          + \beta^2 \widehat{n}^2
+        = \alpha^2 + 2 \alpha \beta \widehat{w_i} \widehat{n} + \beta^2 = \\
+      & = \alpha^2 + 2 \alpha (\widehat{w_i} \widehat{n}
+                               - \alpha \widehat{w_i} \widehat{n})
+                     \widehat{w_i} \widehat{n} + (\widehat{w_i} \widehat{n}
+                                                  - \alpha \widehat{w_i} \widehat{n})^2 = \\
+      & = \alpha^2 
+          + \underline{2 \alpha (\widehat{w_i} \widehat{n})^2}
+          - 2 \alpha^2 (\widehat{w_i} \widehat{n})^2
+          + (\widehat{w_i} \widehat{n})^2
+          - \underline{2 \alpha (\widehat{w_i} \widehat{n})^2}
+          + \alpha^2 (\widehat{w_i} \widehat{n})^2 = \\
+      & = (\widehat{w_i} \widehat{n})^2
+          + (1 - (\widehat{w_i} \widehat{n})^2) \alpha^2,
+\end{align*}
+
+\[ 1 - (\widehat{w_i} \widehat{n})^2 = (1 - (\widehat{w_i} \widehat{n})^2) \alpha^2. \]
+
+Если $1 - (\widehat{w_i} \widehat{n})^2 = 0
+      \quad \Rightarrow \quad \widehat{w_i} \widehat{n} = \pm 1
+      \quad \Rightarrow \quad \widehat{w_i} || \widehat{n}
+      \quad \Rightarrow \quad w_{re} = w_i$, \\
+иначе $\alpha^2 = 1 \quad \Rightarrow \quad \alpha = \pm 1$, так как падающий
+и отраженный луч не могут находиться по одну сторону от нормали, то
+$\alpha = -1$, $\beta = 2 \widehat{w_i} \widehat{n}$, а
+$\widehat{w_{re}} = 2 (\widehat{w_i} \widehat{n}) \widehat{n} - \widehat{w_i}$.
+
+Таким образом
+\begin{equation}
+    w_{re} = \widehat{w_{re}} |w_i|
+           = (2 (\widehat{w_i} \widehat{n}) \widehat{n} - \widehat{w_i}) |w_i|
+           = (2 \frac{w_i n}{|w_i| |n|} \frac{n}{|n|} - \frac{w_i}{|w_i|}) |w_i|
+           = 2 \frac{w_i n}{n^2} n - w_i.
+\end{equation}
+
+\subsubsection*{Преломленный луч}
+Аналогично для преломленного луча
+\[ \widehat{w_r} = \alpha \widehat{w_i} + \beta \widehat{n}. \]
+
+По закону Снеллиуса
+\begin{align} \label{math:snell}
+    n_1 \sin(\theta_i) & = n_2 \sin(\theta_r) \quad \uparrow^2 \nonumber \\
+    n_1^2 \sin^2(\theta_i) & = n_2^2 \sin^2(\theta_r) \nonumber \\
+    n_1^2 (1 - \cos^2(\theta_i)) & = n_2^2 (1 - \cos^2(\theta_r)).
+\end{align}
+
+Так как $\cos{\theta_i} = \widehat{w_i} \widehat{n}$ и
+$\cos{\theta_r} = \widehat{w_r} \widehat{n}$, то выражение \refeq{math:snell}
+преобразуется в
+\begin{align} \label{math:snell2}
+    n_1^2 (1 - (\widehat{w_i} \widehat{n})^2) & = n_2^2 (1 - (\widehat{w_r} \widehat{n})^2)
+                                                = n_2^2 (1 - (\alpha \widehat{w_i} \widehat{n} + \beta \widehat{n}^2)^2)) = \nonumber \\
+                                              & = n_2^2 (1 - (\alpha^2 (\widehat{w_i} \widehat{n})^2
+                                                         + 2 \alpha \beta (\widehat{w_i} \widehat{n}) + \beta^2))
+\end{align}
+
+Так как векторы $\widehat{w_i}$ и $\widehat{w_r}$ единичные
+\begin{equation} \label{math:w_r2}
+    1 = \widehat{w_r}^2 = (\alpha \widehat{w_i} + \beta \widehat{n})^2
+      = \alpha^2 + 2 \alpha \beta (\widehat{w_i} \widehat{n}) + \beta^2,
+\end{equation}
+\begin{equation} \label{math:2ab}
+    2 \alpha \beta (\widehat{w_i} \widehat{n}) = 1 - \alpha^2 - \beta^2.
+\end{equation}
+
+Подставим \refeq{math:2ab} в \refeq{math:snell2}
+\begin{align*}
+    n_1^2 (1 - (\widehat{w_i} \widehat{n})^2) & = n_2^2 (1 - (\alpha^2 (\widehat{w_i} \widehat{n})^2
+                                                              + 1 - \alpha^2 - \beta^2 + \beta^2)) \\
+    n_1^2 (1 - (\widehat{w_i} \widehat{n})^2) & = n_2^2 (1 - (\widehat{w_i} \widehat{n})^2) \alpha^2.
+\end{align*}
+
+Аналогично, если $1 - (\widehat{w_i} \widehat{n})^2 = 0$, то $w_{re} = -w_i$,
+иначе $\alpha = \pm\frac{n_1}{n_2}$. Так как падающий и преломленный лучи не могут
+находиться по одну сторону от нормали, то $\alpha = - \frac{n_1}{n_2}$.
+Подставим полученное значение в \refeq{math:w_r2}
+\begin{equation*}
+    \beta^2 - 2 \frac{n_1}{n_2}(\widehat{w_i}\widehat{n})\beta + \frac{n_1^2 - n_2^2}{n_2^2} = 0
+\end{equation*}
+\begin{equation*}
+    \mathrm{D} = 4 \frac{n_1^2}{n_2^2}(\widehat{w_i} \widehat{n})^2 - 4 \frac{n_1^2 - n_2^2}{n_2^2}
+               = \frac{4}{n_2^2}(n_2^2 - n_1^2(1 - (\widehat{w_i}\widehat{n})^2)).
+\end{equation*}
+
+Пусть $\mathrm{D'} = n_2^2 - n_1^2(1 - (\widehat{w_i}\widehat{n})^2)$, тогда
+$\mathrm{D} = \frac{4}{n_2^2}\mathrm{D}$. В силу того, что $\frac{4}{n_2^2} > 0$,
+сравнение знака дискриминанта можно проводить с величиной $\mathrm{D'}$.
+
+Если $\mathrm{D'} < 0$ - преломления нет.
+
+Если $\mathrm{D'} = 0$
+\begin{align}
+    \beta = \frac{n_1}{n_2}(\widehat{w_i}\widehat{n}) \quad &
+    \Rightarrow\quad \widehat{w_r} = -\frac{n_1}{n_2}\widehat{w_i} + \frac{n_1}{n_2}(\widehat{w_i}\widehat{n}) \widehat{n} \quad\Rightarrow \nonumber \\
+    & \Rightarrow\quad w_r = -\frac{n_1}{n_2} w_i + \frac{n_1}{n_2}\frac{w_i n}{n^2}n = \frac{n_1}{n_2}\Big( \frac{w_i n}{n^2}n - w_i\Big).
+\end{align}
+
+Если $\mathrm{D'} > 0$
+\begin{equation*}
+    \beta = \frac{2 \frac{n_1}{n_2}(\widehat{w_i}\widehat{n}) \pm \sqrt{\mathrm{D}}}{2}
+          = \frac{2 \frac{n_1}{n_2}(\widehat{w_i}\widehat{n}) \pm \frac{2}{n_2}\sqrt{\mathrm{D'}}}{2}
+          = \frac{n_1(\widehat{w_i}\widehat{n}) \pm \sqrt{\mathrm{D'}}}{n_2}
+\end{equation*}
+
+Дляопределения знака подставим $\alpha$ и $\beta$ в выражение для $\widehat{w_r}$ и
+проверим, что $\widehat{w_r}$ и $\widehat{n}$ расположены по разные стороны от
+границы пересечения, то есть $\widehat{w_r} \widehat{n} < 0$
+\begin{align*}
+    \widehat{w_r} \widehat{n} = & (-\frac{n_1}{n_2}\widehat{w_i} + \frac{n_1(\widehat{w_i}\widehat{n}) \pm \sqrt{\mathrm{D'}}}{n_2}\widehat{n})\widehat{n} < 0 \\
+    & -\frac{n_1}{n_2}(\widehat{w_i}\widehat{n}) + \frac{n_1}{n_2}(\widehat{w_i}\widehat{n}) \pm \frac{\sqrt{\mathrm{D'}}}{n_2} = \pm \frac{\sqrt{\mathrm{D'}}}{n_2} < 0 \quad\Rightarrow \\
+    & \Rightarrow\quad \beta = \frac{n_1(\widehat{w_i}\widehat{n}) - \sqrt{\mathrm{D'}}}{n_2} \quad\Rightarrow\quad
+      \widehat{w_r} = -\frac{n_1}{n_2}\widehat{w_i} + \frac{n_1(\widehat{w_i} \widehat{n}) - \sqrt{\mathrm{D'}}}{n_2}\widehat{n}.
+\end{align*}
+
+Таким образом итоговое значение $w_r$
+\begin{equation}
+    w_r = \frac{n_1}{n_2}\Big( \frac{w_i n}{n^2}n - w_i\Big) - \frac{|w_i|}{|n|} \frac{\mathrm{D'}}{n_2} n.
+\end{equation}
+
+\subsection{Разработка алгоритмов}
+
+\vfill
+\begin{figure}[h]
+    \centering
+    \def\svgwidth{0.95\textwidth}
+    \input{algorithm_rt.pdf_tex}
+    \caption{Схема алгоритма трассировки лучей}
+    \label{fig:algorithm_rt}
+\end{figure}
+\vfill
+\pagebreak
+
+\begin{figure}[h]
+    \centering
+    \def\svgwidth{0.6\textwidth}
+    \input{algorithm_bsdf.pdf_tex}
+    \caption{Схема алгоритма вычисления функции рассеивания}
+    \label{fig:algorithm_bsdf}
+\end{figure}
+\pagebreak
+
+\begin{figure}[h]
+    \centering
+    \def\svgwidth{0.2\textwidth}
+    \input{algorithm_bssrdf.pdf_tex}
+    \caption{Схема алгоритма вычисления функции подповерхностного рассеивания}
+    \label{fig:algorithm_bssrdf}
+\end{figure}
+\pagebreak
+
+\pagebreak
+
