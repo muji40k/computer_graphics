@@ -9,6 +9,8 @@
 #include "point.h"
 #include "ray.h"
 
+#include "bounding.h"
+
 class Plane : public ObjectPrimitive
 {
     public:
@@ -27,6 +29,12 @@ class Plane : public ObjectPrimitive
               double lx = 5, double ly = 5);
         virtual ~Plane();
 
+        virtual bool intersectBounding(const Ray3<double> &ray) const override;
+
+        virtual double area(void) const override;
+
+        virtual const ShapeSampler &getSampler(void) const override;
+
         virtual const Attribute &getAttribute(void) const override;
         virtual Intersection intersect(const Ray3<double> &ray) const override;
         virtual void apply(const Transform<double, 3> &transform) override;
@@ -43,19 +51,32 @@ class Plane : public ObjectPrimitive
         double ly;
         double ix;
         double iy;
+        std::shared_ptr<Bounding> bounding;
+        double space;
+        std::shared_ptr<ShapeSampler> sampler;
 };
 
-class DegeneratePlaneException : public BaseException
+class CommonPlaneException : public CommonObjectPrimitiveException
+{
+    public:
+        CommonPlaneException(void) = default;
+        CommonPlaneException(const char *filename, const size_t line,
+                            const char *function,
+                            const char *message = "General plane exception")
+            : CommonObjectPrimitiveException(filename, line, function, message) {};
+        ~CommonPlaneException(void) = default;
+};
+
+class DegeneratePlaneException : public CommonPlaneException
 {
     public:
         DegeneratePlaneException(void) = default;
         DegeneratePlaneException(const char *filename, const size_t line,
                                    const char *function,
                                    const char *message = "Plane is degeneerate")
-            : BaseException(filename, line, function, message) {};
+            : CommonPlaneException(filename, line, function, message) {};
         ~DegeneratePlaneException(void) = default;
 };
-
 
 #endif
 

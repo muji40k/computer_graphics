@@ -3,9 +3,8 @@
 
 #include <memory>
 
-#include "base_exception.h"
-
 #include "object_primitive.h"
+#include "bounding.h"
 #include "point.h"
 #include "ray.h"
 
@@ -17,9 +16,15 @@ class Disk : public ObjectPrimitive
 
     public:
         Disk(const Point3<double> &center,
-             const Normal3<double> &normal,
+             const Vector3<double> &normal,
              double radius);
         virtual ~Disk();
+
+        virtual bool intersectBounding(const Ray3<double> &ray) const override;
+
+        virtual double area(void) const override;
+
+        virtual const ShapeSampler &getSampler(void) const override;
 
         virtual const Attribute &getAttribute(void) const override;
         virtual Intersection intersect(const Ray3<double> &ray) const override;
@@ -28,18 +33,32 @@ class Disk : public ObjectPrimitive
 
     private:
         std::shared_ptr<Point3<double>> center;
-        std::shared_ptr<Normal3<double>> normal;
+        std::shared_ptr<Vector3<double>> normal;
         double radius;
+        double rsqr;
+        std::shared_ptr<Bounding> bounding;
+        std::shared_ptr<ShapeSampler> sampler;
 };
 
-class NegativeRadiusDiskException : public BaseException
+class CommonDiskException: public CommonObjectPrimitiveException
+{
+    public:
+        CommonDiskException(void) = default;
+        CommonDiskException(const char *filename, const size_t line,
+                            const char *function,
+                            const char *message = "General disk exception")
+            : CommonObjectPrimitiveException(filename, line, function, message) {};
+        ~CommonDiskException(void) = default;
+};
+
+class NegativeRadiusDiskException : public CommonDiskException
 {
     public:
         NegativeRadiusDiskException(void) = default;
         NegativeRadiusDiskException(const char *filename, const size_t line,
                                    const char *function,
                                    const char *message = "Negative radius given")
-            : BaseException(filename, line, function, message) {};
+            : CommonDiskException(filename, line, function, message) {};
         ~NegativeRadiusDiskException(void) = default;
 };
 

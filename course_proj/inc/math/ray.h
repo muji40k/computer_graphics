@@ -90,7 +90,8 @@ class Ray3 : public Ray<Type, 3>
         Ray3<Type> &operator = (const Ray2<Type> &ray)
         { static_cast<Ray<Type, 3> &>(*this) = ray; return *this; }
         Ray3<Type> &operator = (const Ray3<Type> &ray)
-        { static_cast<Ray<Type, 3> &>(*this) = ray; return *this; }
+        // { static_cast<Ray<Type, 3> &>(*this) = ray; return *this; }
+        { this->setOrigin(ray.getOrigin()); this->setDirection(ray.getDirection()); return *this; }
 
         const Point3<Type>  getOrigin(void) const
         { return Point3<Type>(this->Ray<Type, 3>::getOrigin()); };

@@ -1,0 +1,5 @@
+#ifndef _SAMPLING_LIGHT_TRACER_H_
+#define _SAMPLING_LIGHT_TRACER_H_
+
+#endif
+

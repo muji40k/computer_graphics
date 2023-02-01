@@ -3,6 +3,10 @@
 #include "polygon.h"
 #include "vector.h"
 
+#include "bounding_sphere.h"
+
+#include "polygon_sampler.h"
+
 const Attribute &Polygon::ATTRIBUTE(void)
 {
     static const Attribute attr = ObjectPrimitive::ATTRIBUTE() \
@@ -18,6 +22,7 @@ Polygon::Polygon(const Point3<double> &a, const Point3<double> &b,
 {
     Vector3 tmp1 = a < b, tmp2 = c < b;
     Vector3 n = tmp1 * tmp2;
+    this->space = n.length();
 
     if (FLT_EPSILON > fabs(n.length()))
         throw CALL_EX(DegeneratePolygonException);
@@ -49,16 +54,38 @@ Polygon::Polygon(const Point3<double> &a, const Point3<double> &b,
     *(this->normals[2]) = *(this->center) > (c + vside * t);
     this->lnormalssqr[2] = this->normals[2]->lengthSqr();
 
-    // this->a = std::make_shared<Point3<double>>(a);
-    // this->b = std::make_shared<Point3<double>>(b);
-    // this->c = std::make_shared<Point3<double>>(c);
-
     this->normal_in = std::make_shared<Normal3<double>>(normal);
 
     if (0 > (n & normal))
         n *= -1;
 
     this->normal = std::make_shared<Normal3<double>>(n);
+
+    Point3<double> center = (a + b + c) / 3;
+    this->bounding = std::make_shared<BoundingSphere>(center);
+    this->bounding->expand(a);
+    this->bounding->expand(b);
+    this->bounding->expand(c);
+
+    this->sampler = std::make_shared<PolygonSampler>(a, b, c);
+}
+
+bool Polygon::intersectBounding(const Ray3<double> &ray) const
+{
+    Ray3 tmp (ray);
+    tmp.undo(*this->transform_global);
+
+    return this->bounding->intersect(tmp);
+}
+
+double Polygon::area(void) const
+{
+    return this->space;
+}
+
+const ShapeSampler &Polygon::getSampler(void) const
+{
+    return *this->sampler;
 }
 
 const Attribute &Polygon::getAttribute(void) const
@@ -68,16 +95,14 @@ const Attribute &Polygon::getAttribute(void) const
 
 Intersection Polygon::intersect(const Ray3<double> &ray) const
 {
-    Intersection out = this->ObjectPrimitive::intersect(ray);
+    Intersection out = Intersection();
 
     Ray3<double> tmp (ray);
     tmp.undo(*this->transform_global);
     double t = ((tmp.getOrigin() > *(this->center)) & *(this->normal)) \
                / (tmp.getDirection() & *(this->normal));
-    // double t = ((tmp.getOrigin() > *(this->a)) & *(this->normal))
-    //            / (tmp.getDirection() & *(this->normal));
 
-    if (out && (FLT_EPSILON > t || out.getT() < t))
+    if (FLT_EPSILON > t)
         return out;
 
     Point3<double> point = tmp(t);
@@ -89,21 +114,6 @@ Intersection Polygon::intersect(const Ray3<double> &ray) const
         if (((*this->normals[i]) & dir) > this->lnormalssqr[i])
             valid = false;
 
-    // Vector3<double> r = this->sideO(0) > point;
-    // Vector3<double> v = this->sideV(0);
-    // bool sign = 0 > ((r * v) & *(this->normal)), valid = true;
-    // double res;
-    //  
-    // for (size_t i = 1; valid && 3 > i; i++)
-    // {
-    //     r = this->sideO(i) > point;
-    //     v = this->sideV(i);
-    //     res = ((r * v) & *(this->normal));
-    //  
-    //     if ((!sign && 0 > res) || (sign && 0 < res))
-    //         valid = false;
-    // }
-
     if (valid)
         out = Intersection(this, point, *(this->normal_in), t,
                            *this->transform_global);
@@ -113,8 +123,6 @@ Intersection Polygon::intersect(const Ray3<double> &ray) const
 
 void Polygon::apply(const Transform<double, 3> &transform)
 {
-    this->ObjectPrimitive::apply(transform);
-
     this->center->apply(transform);
 
     for (size_t i = 0; 3 > i; i++)
@@ -123,55 +131,25 @@ void Polygon::apply(const Transform<double, 3> &transform)
         this->lnormalssqr[i] = this->normals[i]->lengthSqr();
     }
 
-    // a->apply(transform);
-    // b->apply(transform);
-    // c->apply(transform);
+    this->normal_in->apply(transform);
+    this->normal->apply(transform);
 
-    normal_in->apply(transform);
-    normal->apply(transform);
+    this->bounding->apply(transform);
+    this->sampler->apply(transform);
 }
 
 void Polygon::undo(const Transform<double, 3> &transform)
 {
-    this->ObjectPrimitive::undo(transform);
-
     for (size_t i = 0; 3 > i; i++)
     {
         this->normals[i]->apply(transform);
         this->lnormalssqr[i] = this->normals[i]->lengthSqr();
     }
 
-    // a->undo(transform);
-    // b->undo(transform);
-    // c->undo(transform);
+    this->normal_in->undo(transform);
+    this->normal->undo(transform);
 
-    normal_in->undo(transform);
-    normal->undo(transform);
+    this->bounding->undo(transform);
+    this->sampler->undo(transform);
 }
-
-// Vector3<double> Polygon::sideV(size_t i) const
-// {
-//     i %= 3;
-//  
-//     if (0 == i)
-//         return *(this->a) > *(this->b);
-//  
-//     if (1 == i)
-//         return *(this->b) > *(this->c);
-//  
-//     return *(this->c) > *(this->a);
-// }
-//  
-// const Point3<double> &Polygon::sideO(size_t i) const
-// {
-//     i %= 3;
-//  
-//     if (0 == i)
-//         return *(this->a);
-//  
-//     if (1 == i)
-//         return *(this->b);
-//  
-//     return *(this->c);
-// }
 

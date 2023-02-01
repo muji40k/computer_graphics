@@ -80,9 +80,9 @@ Point<Type, nDim>::operator bool(void) const
 {
     for (size_t i = 0; nDim > i; i++)
         if (FLT_EPSILON < fabs((double)this->dims[i]))
-            return false;
+            return true;
 
-    return true;
+    return false;
 }
 
 template <typename Type, size_t nDim>

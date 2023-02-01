@@ -15,5 +15,16 @@ class ParametricModel : public Object
         virtual const Attribute &getAttribute(void) const override;
 };
 
+class CommonParametricModelException: public CommonObjectException
+{
+    public:
+        CommonParametricModelException(void) = default;
+        CommonParametricModelException(const char *filename, const size_t line,
+                                       const char *function,
+                                       const char *message = "General parametric model exception")
+            : CommonObjectException(filename, line, function, message) {};
+        ~CommonParametricModelException(void) = default;
+};
+
 #endif
 

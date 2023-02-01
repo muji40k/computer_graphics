@@ -11,6 +11,28 @@ const Attribute &PolygonModel::ATTRIBUTE(void)
 
 PolygonModel::~PolygonModel(void) {}
 
+bool PolygonModel::intersectBounding(const Ray3<double> &ray) const
+{
+    bool v = false;
+    Ray3 tmp (ray);
+    tmp.undo(*this->transform_global);
+
+    for (const_iterator it = this->begin(); !v && this->end() != it; it++)
+        v = (*it)->intersectBounding(tmp);
+
+    return v;
+}
+
+double PolygonModel::area(void) const
+{
+    double sum = 0;
+
+    for (auto polygon : this->lst)
+        sum += polygon->area();
+
+    return sum;
+}
+
 const Attribute &PolygonModel::getAttribute(void) const
 {
     return PolygonModel::ATTRIBUTE();
@@ -18,39 +40,35 @@ const Attribute &PolygonModel::getAttribute(void) const
 
 Intersection PolygonModel::intersect(const Ray3<double> &ray) const
 {
-    Intersection out = this->Object::intersect(ray);
+    Intersection out = Intersection();
     Intersection current;
-    bool changed = false;
 
     for (Polygon *pol: this->lst)
     {
         current = pol->intersect(ray);
 
-        if (current && out.getT() > current.getT())
-        {
-            changed = true;
+        if (current && (!out || out.getT() > current.getT()))
             out = current;
-        }
     }
 
-    if (changed)
+    if (out)
+    {
+        out = Intersection(this, out.getPoint(), out.getNormal(), out.getT(),
+                           out.toGlobal());
         out.apply(*this->transform_global);
+    }
 
     return out;
 }
 
 void PolygonModel::apply(const Transform<double, 3> &transform)
 {
-    this->Object::apply(transform);
-
     for (Polygon *pol: this->lst)
         pol->apply(transform);
 }
 
 void PolygonModel::undo(const Transform<double, 3> &transform)
 {
-    this->Object::undo(transform);
-
     for (Polygon *pol: this->lst)
         pol->undo(transform);
 }
@@ -127,4 +145,33 @@ size_t PolygonModel::getAmount(void) const
     return this->lst.size();
 }
 
+PolygonModel::iterator PolygonModel::begin(void)
+{
+    return this->lst.begin();
+}
+
+PolygonModel::iterator PolygonModel::end(void)
+{
+    return this->lst.end();
+}
+
+PolygonModel::const_iterator PolygonModel::begin(void) const
+{
+    return this->lst.cbegin();
+}
+
+PolygonModel::const_iterator PolygonModel::end(void) const
+{
+    return this->lst.cend();
+}
+
+PolygonModel::const_iterator PolygonModel::cbegin(void) const
+{
+    return this->lst.cbegin();
+}
+
+PolygonModel::const_iterator PolygonModel::cend(void) const
+{
+    return this->lst.cend();
+}
 

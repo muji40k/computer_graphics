@@ -113,33 +113,6 @@ const Attribute &Shape::getAttribute(void) const
     return Shape::ATTRIBUTE();
 }
 
-Intersection Shape::intersect(const Ray3<double> &ray) const
-{
-    Shape::const_iterator it = this->begin();
-    Intersection out;
-
-    if (this->end() == it)
-        return out;
-
-    Ray3<double> tmp (ray);
-    tmp.undo(*this->transform_global);
-    out = (*it)->intersect(tmp);
-    it++;
-
-    for (Intersection current; this->end() != it; it++)
-    {
-        current = (*it)->intersect(tmp);
-
-        if (current && (!out || current.getT() < out.getT()))
-            out = current;
-    }
-
-    if (out)
-        out.apply(*this->transform_global);
-
-    return out;
-}
-
 void Shape::setParent(Shape *parent)
 {
     if (!parent)
@@ -148,26 +121,14 @@ void Shape::setParent(Shape *parent)
         parent->add(this);
 }
 
-Shape &Shape::getParent(void)
+Shape *Shape::getParent(void)
 {
-    return *this->parent;
+    return this->parent;
 }
 
-const Shape &Shape::getParent(void) const
+const Shape *Shape::getParent(void) const
 {
-    return *this->parent;
-}
-
-void Shape::apply(const Transform<double, 3> &transform)
-{
-    for (Shape *shape: this->structure)
-        shape->apply(transform);
-}
-
-void Shape::undo(const Transform<double, 3> &transform)
-{
-    for (Shape *shape: this->structure)
-        shape->undo(transform);
+    return this->parent;
 }
 
 void Shape::applyBasis(const Transform<double, 3> &transform)
@@ -183,6 +144,16 @@ void Shape::undoBasis(const Transform<double, 3> &transform)
 void Shape::resetBasis(void)
 {
     *(this->transform_global) = Transform<double, 3>();
+}
+
+Transform<double, 3> &Shape::getBasisTransform(void)
+{
+    return *this->transform_global;
+}
+
+const Transform<double, 3> &Shape::getBasisTransform(void) const
+{
+    return *this->transform_global;
 }
 
 Shape::iterator Shape::begin(void)

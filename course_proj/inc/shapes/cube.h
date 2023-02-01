@@ -7,6 +7,7 @@
 
 #include "parametric_model.h"
 #include "plane.h"
+#include "bounding.h"
 
 class Cube : public ParametricModel
 {
@@ -18,6 +19,12 @@ class Cube : public ParametricModel
         Cube(double lx, double ly, double lz);
         virtual ~Cube(void);
 
+        virtual bool intersectBounding(const Ray3<double> &ray) const override;
+
+        virtual double area(void) const override;
+
+        virtual const ShapeSampler &getSampler(void) const override;
+
         virtual const Attribute &getAttribute(void) const override;
         virtual Intersection intersect(const Ray3<double> &ray) const override;
         virtual void apply(const Transform<double, 3> &transform) override;
@@ -25,16 +32,29 @@ class Cube : public ParametricModel
 
     private:
         std::list<std::shared_ptr<Plane>> lst;
+        std::shared_ptr<Bounding> bounding;
+        std::shared_ptr<ShapeSampler> sampler;
 };
 
-class DegenerateCubeException : public BaseException
+class CommonCubeException : public CommonParametricModelException
+{
+    public:
+        CommonCubeException(void) = default;
+        CommonCubeException(const char *filename, const size_t line,
+                            const char *function,
+                            const char *message = "General cube exception")
+            : CommonParametricModelException(filename, line, function, message) {};
+        ~CommonCubeException(void) = default;
+};
+
+class DegenerateCubeException : public CommonCubeException
 {
     public:
         DegenerateCubeException(void) = default;
         DegenerateCubeException(const char *filename, const size_t line,
                                    const char *function,
                                    const char *message = "Cube is degeneerate")
-            : BaseException(filename, line, function, message) {};
+            : CommonCubeException(filename, line, function, message) {};
         ~DegenerateCubeException(void) = default;
 };
 

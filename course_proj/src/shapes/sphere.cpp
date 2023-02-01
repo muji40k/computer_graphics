@@ -1,6 +1,11 @@
 #include "sphere.h"
 
 #include <float.h>
+#include <cmath>
+
+#include "bounding_sphere.h"
+
+#include "sphere_sampler.h"
 
 const Attribute &Sphere::ATTRIBUTE(void)
 {
@@ -20,6 +25,30 @@ Sphere::Sphere(const Point3<double> &center, double radius)
     this->center = std::make_shared<Point3<double>>(center);
     this->radius = radius;
     this->radiussqr = radius * radius;
+
+    this->bounding = std::make_shared<BoundingSphere>(center);
+    this->bounding->expand(center + Vector3<double>({radius, 0, 0}));
+    this->bounding->expand(center + Vector3<double>({-radius, 0, 0}));
+
+    this->sampler = std::make_shared<SphereSampler>(center, radius);
+}
+
+bool Sphere::intersectBounding(const Ray3<double> &ray) const
+{
+    Ray3 tmp (ray);
+    tmp.undo(*this->transform_global);
+
+    return this->bounding->intersect(tmp);
+}
+
+double Sphere::area(void) const
+{
+    return 4 * M_PI * this->radiussqr;
+}
+
+const ShapeSampler &Sphere::getSampler(void) const
+{
+    return *this->sampler;
 }
 
 const Attribute &Sphere::getAttribute(void) const
@@ -29,7 +58,7 @@ const Attribute &Sphere::getAttribute(void) const
 
 Intersection Sphere::intersect(const Ray3<double> &ray) const
 {
-    Intersection out = this->ParametricModel::intersect(ray);
+    Intersection out = Intersection();
 
     Ray3<double> tmp (ray);
     tmp.undo(*this->transform_global);
@@ -78,7 +107,7 @@ Intersection Sphere::intersect(const Ray3<double> &ray) const
     }
 
 
-    if (t > 0 && (!out || t < out.getT()))
+    if (t > 0)
     {
         Point3<double> point = tmp(t);
         Normal3<double> normal (*this->center, point);
@@ -93,13 +122,15 @@ Intersection Sphere::intersect(const Ray3<double> &ray) const
 
 void Sphere::apply(const Transform<double, 3> &transform)
 {
-    this->ParametricModel::apply(transform);
     this->center->apply(transform);
+    this->bounding->apply(transform);
+    this->sampler->apply(transform);
 }
 
 void Sphere::undo(const Transform<double, 3> &transform)
 {
-    this->ParametricModel::undo(transform);
     this->center->undo(transform);
+    this->bounding->undo(transform);
+    this->sampler->undo(transform);
 }
 

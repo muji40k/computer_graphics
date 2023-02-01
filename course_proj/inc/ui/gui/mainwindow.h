@@ -12,12 +12,25 @@
 #include "ui_mainwindow.h"
 #include "qcanvas.h"
 
+#include "qt_display_adapter.h"
+#include "split_display_decorator.h"
+#include "scene.h"
+
+#include "lighting.h"
+#include "orthogonal_projector.h"
+#include "pinhole_projector.h"
+#include "projection.h"
+
 #include "shape.h"
 #include "disk.h"
 #include "polygon.h"
 #include "sphere.h"
 #include "cube.h"
 #include "plane.h"
+#include "cilinder.h"
+#include "cone.h"
+#include "tube.h"
+#include "null_object.h"
 
 class MainWindow : public QMainWindow
 {
@@ -34,11 +47,11 @@ class MainWindow : public QMainWindow
     private:
         QSharedPointer<Ui_MainWindow> ui = nullptr;
         QSharedPointer<QCanvas> canvas = nullptr;
-        QSharedPointer<Shape> shape1 = nullptr;
-        QSharedPointer<Shape> shape2 = nullptr;
-        QSharedPointer<Shape> shape3 = nullptr;
+        QSharedPointer<Scene> scene = nullptr;
         bool needredraw = false;
         QList<QPair<QPoint, int>> list;
+        std::list<std::shared_ptr<Shape>> shapes;
+        std::list<std::shared_ptr<ShapeProperty>> properties;
 
         void paintEvent(QPaintEvent *event);
 };

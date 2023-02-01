@@ -2,6 +2,7 @@
 #define _META_OBJECT_H_
 
 #include "shape.h"
+#include "none_sampler.h"
 
 class MetaObject : public Shape
 {
@@ -13,6 +14,22 @@ class MetaObject : public Shape
         virtual ~MetaObject() = 0;
 
         virtual const Attribute &getAttribute(void) const override;
+
+        virtual const ShapeSampler &getSampler(void) const override;
+
+    private:
+        NoneSampler sampler;
+};
+
+class CommonMetaObjectException: public CommonShapeException
+{
+    public:
+        CommonMetaObjectException(void) = default;
+        CommonMetaObjectException(const char *filename, const size_t line,
+                                  const char *function,
+                                  const char *message = "General meta object exception")
+            : CommonShapeException(filename, line, function, message) {};
+        ~CommonMetaObjectException(void) = default;
 };
 
 #endif

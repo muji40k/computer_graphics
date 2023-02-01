@@ -13,14 +13,16 @@ class BoundingSphere : public Bounding
 
         virtual void expand(const Point3<double> &point) override;
         virtual void expand(const std::list<Point3<double>> &points) override;
-        virtual std::list<Point3<double>> farest(const Point3<double> &point) const override;
-        virtual std::list<Point3<double>> nearest(const Point3<double> &point) const override;
         virtual bool isInside(const Point3<double> &point) const override;
         virtual bool intersect(const Ray3<double> &ray) const override;
+
+        virtual void apply(const Transform<double, 3> &transform) override;
+        virtual void undo(const Transform<double, 3> &transform) override;
 
     private:
         Point3<double> center;
         double radius;
+        double radiussqr;
 };
 
 #endif
