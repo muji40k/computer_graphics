@@ -166,7 +166,7 @@ class Normal3 : public Normal<Type, 3>
         explicit Normal3(const Vector<Type, oDim> &vector) : Normal<Type, 3>(vector) { this->initProperties(); }
 
         Normal3(const Normal2<Type> &normal) : Normal<Type, 3>(normal) { this->initProperties(); };
-        explicit Normal3(const Normal3<Type> &normal) : Normal<Type, 3>(normal) { this->initProperties(); };
+        Normal3(const Normal3<Type> &normal) : Normal<Type, 3>(normal) { this->initProperties(); };
         Normal3(const Vector2<Type> &vector) : Normal<Type, 3>(vector) { this->initProperties(); };
         explicit Normal3(const Vector3<Type> &vector) : Normal<Type, 3>(vector) { this->initProperties(); };
 

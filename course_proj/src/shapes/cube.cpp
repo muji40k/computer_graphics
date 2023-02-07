@@ -29,11 +29,11 @@ Cube::Cube(double lx, double ly, double lz)
                                                 Vector3<double>({0, 0, 1}),
                                                 ly, lz));
     this->lst.push_back(std::make_shared<Plane>(Point3<double>({0, ly / 2, 0}),
-                                                Vector3<double>({1, 0, 0}),
+                                                Vector3<double>({-1, 0, 0}),
                                                 Vector3<double>({0, 0, 1}),
                                                 lx, lz));
     this->lst.push_back(std::make_shared<Plane>(Point3<double>({0, -ly / 2, 0}),
-                                                Vector3<double>({-1, 0, 0}),
+                                                Vector3<double>({1, 0, 0}),
                                                 Vector3<double>({0, 0, 1}),
                                                 lx, lz));
     this->lst.push_back(std::make_shared<Plane>(Point3<double>({0, 0, lz / 2}),

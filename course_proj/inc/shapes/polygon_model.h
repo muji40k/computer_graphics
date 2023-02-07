@@ -8,6 +8,8 @@
 #include "object.h"
 #include "polygon.h"
 
+#include "shape_sampler.h"
+
 class PolygonModel : public Object
 {
     public:
@@ -15,14 +17,14 @@ class PolygonModel : public Object
         static const Attribute &ATTRIBUTE(void);
 
     public:
-        using iterator = list<Polygon *>::iterator;
-        using const_iterator = list<Polygon *>::const_iterator;
-
-        virtual ~PolygonModel();
+        PolygonModel(void);
+        virtual ~PolygonModel(void);
 
         virtual bool intersectBounding(const Ray3<double> &ray) const override;
 
         virtual double area(void) const override;
+
+        virtual const ShapeSampler &getSampler(void) const override;
 
         virtual const Attribute &getAttribute(void) const override;
         virtual Intersection intersect(const Ray3<double> &ray) const override;
@@ -30,23 +32,21 @@ class PolygonModel : public Object
         virtual void apply(const Transform<double, 3> &transform) override;
         virtual void undo(const Transform<double, 3> &transform) override;
 
-        void add(Polygon *shape);
-        void remove(Polygon *shape);
+        void add(const Point3<double>  &a, const Point3<double>  &b,
+                 const Point3<double>  &c, const Normal3<double> &normal);
         void remove(const size_t index);
-        void remove(iterator &it);
         Polygon &get(const size_t index);
         const Polygon &get(const size_t index) const;
         size_t getAmount(void) const;
 
-        iterator begin(void);
-        iterator end(void);
-        const_iterator begin(void) const;
-        const_iterator end(void) const;
-        const_iterator cbegin(void) const;
-        const_iterator cend(void) const;
+    private:
+        void expandBounding(const Point3<double>  &a, const Point3<double>  &b,
+                            const Point3<double>  &c);
 
     private:
-        std::list<Polygon *> lst;
+        std::list<std::shared_ptr<Polygon>> lst;
+        std::shared_ptr<ShapeSampler> sampler;
+        std::shared_ptr<Bounding> bounding;
 };
 
 class CommonPolygonModelException: public CommonObjectException

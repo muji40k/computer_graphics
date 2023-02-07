@@ -1,9 +1,6 @@
 #ifndef _SIMPLE_SHAPE_TRACER_H_
 #define _SIMPLE_SHAPE_TRACER_H_
 
-#include "shape.h"
-#include "intersection.h"
-
 #include "shape_tracer.h"
 
 class SimpleShapeTracer : public ShapeTracer

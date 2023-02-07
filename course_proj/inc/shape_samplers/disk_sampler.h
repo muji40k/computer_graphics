@@ -23,7 +23,7 @@ class DiskSampler : public ShapeSampler
 
     private:
         Point3<double> center;
-        Normal3<double> normal;
+        Vector3<double> normal;
         Vector3<double> x;
         Vector3<double> y;
         double radius;

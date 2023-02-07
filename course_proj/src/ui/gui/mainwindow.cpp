@@ -5,16 +5,29 @@
 #include <math.h>
 #include <pthread.h>
 
+#include <mutex>
+
 #include "transform_strategies.h"
-#include "simple_shape_tracer.h"
+#include "simple_scene_tracer.h"
 #include "direct_light_tracer.h"
+#include "sampling_light_tracer.h"
+
+#include "file_polygon_model_builder.h"
+
+std::mutex mut;
 
 typedef struct
 {
     BaseDisplayAdapter *display;
     Scene              *scene;
     bool               *fin;
+    size_t             *progres;
+    std::mutex         *mutex;
 } parg_t;
+
+#define SAMPLES 1
+
+using SpawnMethod = Ray3<double> (Projection::*)(size_t, size_t) const;
 
 void *pdrawfunc(void *param)
 {
@@ -24,161 +37,160 @@ void *pdrawfunc(void *param)
     parg_t *arg = (parg_t *)param;
 
     DirectLightTracer ltracer (*arg->scene);
-    SimpleShapeTracer stracer;
+    // SamplingLightTracer ltracer (*arg->scene, 200);
+    SimpleSceneTracer stracer;
     Ray3<double> ray;
     Point3<double> tmp;
     Intersection inter;
-    Intersection close;
     Intensity<> intensity;
     std::list<light_trace_t> trace;
+    std::list<std::shared_ptr<ShapeProperty>> props = arg->scene->getProperties(Lighting::ATTRIBUTE());
 
     auto projectors = arg->scene->getProperties(Projector::ATTRIBUTE());
     std::shared_ptr<Projection> projection = std::static_pointer_cast<Projector>(projectors.front())->project(*arg->display);
 
-    // std::cout << "w: " << arg->display->width() << ", h: " << arg->display->height() << std::endl;
+    SpawnMethod spawner_method = nullptr;
+
+    if (SAMPLES == 1)
+        spawner_method = &Projection::spawnRay;
+    else
+        spawner_method = &Projection::sampleRay;
 
     for (size_t i = 0; arg->display->width() > i; i++)
         for (size_t j = 0; arg->display->height() > j; j++)
         {
-            // std::cout << "i: " << i << ", j: " << j << std::endl;
-            ray = projection->spawnRay(i, j);
-            close = Intersection();
             intensity = Intensity<>();
 
-            // std::cout << "Attempt to find intersection" << std::endl;
-            for (auto shape : *arg->scene)
+            for (size_t k = 0; SAMPLES > k; k++)
             {
-                inter = stracer.trace(*shape, ray);
+                ray = ((projection.get())->*spawner_method)(i, j);
+                inter = stracer.trace(*arg->scene, ray);
 
-                if (inter && (!close || (close && close.getT() < inter.getT())))
-                    close = inter;
-            }
-
-            if (close)
-            {
-                // std::cout << "Intersection found" << std::endl;
-                intensity = Intensity<>({55, 55, 55});
-                // intensity = Intensity<>({0, 55, 0});
-                tmp = close.getPoint();
-                tmp.apply(close.toGlobal());
-                trace = ltracer.trace(tmp);
-
-                for (light_trace_t &t : trace)
+                if (inter)
                 {
-                    Vector3<double> &cur = t.direction, norm (close.getNormal());
-                    norm.apply(close.toGlobal());
-                    Vector3<double> ref = 2 * (cur & norm) / norm.lengthSqr() * norm - cur;
+                    bool is_light = false;
+                    auto prop = props.begin();
+                    Intensity<> current;
 
-                    double fraca = (cur & norm) / norm.length();
-                    double fracs = pow(((-ray.getDirection().normalised()) & ref.normalised()), 3);
-                    intensity += t.intensity * (0.2 * fraca + 0.8 * fracs);
+                    while (!is_light && prop != props.end())
+                    {
+                        if (inter.getShape() == &(*prop)->getTarget())
+                            is_light = true;
+                        else
+                            prop++;
+                    }
+
+                    if (is_light)
+                    {
+                        // Point3<double> tmp = close.getPoint();
+                        // tmp.apply(close.toGlobal());
+                        // double d = distance(ray.getOrigin(), tmp);
+                        current = std::static_pointer_cast<Lighting>(*prop)->getEmission();
+                    }
+                    else
+                    {
+                        current = Intensity<>({55, 55, 55});
+                        tmp = inter.getPoint();
+                        tmp.apply(inter.toGlobal());
+                        trace = ltracer.trace(tmp);
+
+                        for (light_trace_t &t : trace)
+                        {
+                            Vector3<double> &cur = t.direction, norm (inter.getNormal());
+                            norm.apply(inter.toGlobal());
+                            Vector3<double> ref = 2 * (cur & norm) / norm.lengthSqr() * norm - cur;
+
+                            double fraca = (cur & norm) / norm.length();
+                            double fracs = pow(((-ray.getDirection().normalised()) & ref.normalised()), 3);
+                            current += t.intensity * (0.7 * fraca + 0.3 * fracs);
+                        }
+
+                        current[0] *= 0.8;
+                        current[1] *= 1;
+                        current[2] *= 0.8;
+                    }
+
+                    intensity += current;
                 }
-
-                intensity[0] *= 0.8;
-                intensity[1] *= 1;
-                intensity[2] *= 0.8;
             }
 
-            arg->display->setAt(i, j, intensity);
+            arg->display->setAt(i, j, intensity / SAMPLES);
+
+            arg->mutex->lock();
+            (*arg->progres)++;
+            arg->mutex->unlock();
         }
+        // {
+        //     Intensity avg;
+        //  
+        //     for (size_t k = 0; SAMPLES > k; k++)
+        //     {
+        //         ray = projection->sampleRay(i, j);
+        //         close = Intersection();
+        //         intensity = Intensity<>();
+        //  
+        //         for (auto shape : *arg->scene)
+        //         {
+        //             inter = stracer.trace(*shape, ray);
+        //  
+        //             if (inter && (!close || close.getT() > inter.getT()))
+        //                 close = inter;
+        //         }
+        //  
+        //         if (close)
+        //         {
+        //             bool is_light = false;
+        //             auto prop = props.begin();
+        //  
+        //             while (!is_light && prop != props.end())
+        //             {
+        //                 if (close.getShape() == &(*prop)->getTarget())
+        //                     is_light = true;
+        //                 else
+        //                     prop++;
+        //             }
+        //  
+        //             if (is_light)
+        //             {
+        //                 // Point3<double> tmp = close.getPoint();
+        //                 // tmp.apply(close.toGlobal());
+        //                 // double d = distance(ray.getOrigin(), tmp);
+        //                 intensity = std::static_pointer_cast<Lighting>(*prop)->getEmission();
+        //             }
+        //             else
+        //             {
+        //                 intensity = Intensity<>({55, 55, 55});
+        //                 tmp = close.getPoint();
+        //                 tmp.apply(close.toGlobal());
+        //                 trace = ltracer.trace(tmp);
+        //  
+        //                 for (light_trace_t &t : trace)
+        //                 {
+        //                     Vector3<double> &cur = t.direction, norm (close.getNormal());
+        //                     norm.apply(close.toGlobal());
+        //                     Vector3<double> ref = 2 * (cur & norm) / norm.lengthSqr() * norm - cur;
+        //  
+        //                     double fraca = (cur & norm) / norm.length();
+        //                     double fracs = pow(((-ray.getDirection().normalised()) & ref.normalised()), 3);
+        //                     intensity += t.intensity * (0.7 * fraca + 0.3 * fracs);
+        //                 }
+        //  
+        //                 intensity[0] *= 0.8;
+        //                 intensity[1] *= 1;
+        //                 intensity[2] *= 0.8;
+        //             }
+        //         }
+        //  
+        //         avg += intensity;
+        //     }
+        //  
+        //     arg->display->setAt(i, j, avg / SAMPLES);
+        //  
+        //     arg->mutex->lock();
+        //     (*arg->progres)++;
+        //     arg->mutex->unlock();
+        // }
 
-    // QColor color;
-    // Point3<double> start ({arg->startx, 0, arg->offset});
-    // Point3<double> base ({0, 0, 5 * arg->offset});
-    // Point3<double> res;
-    // Point3<double> ls ({-1.75, 1.75, 5.75});
-    // Vector3<double> dir ({0, 0, -1});
-    // Vector3<double> ref;
-    // Ray3<double> ray;
-    // Ray3<double> ray2;
-    // Intersection inter;
-    // double valr, valg, valb;
-    // Vector3<double> cur, norm;
-    // SimpleShapeTracer tracer;
-    //  
-    // for (size_t i = 0; arg->lx > i; i++)
-    // {
-    //     start.x = start.x + arg->step;
-    //     start.y = arg->starty;;
-    //  
-    //     for (size_t j = 0; arg->ly > j; j++)
-    //     {
-    //         start.y = start.y + arg->step;
-    //         ray.setOrigin(start);
-    //         dir = base > start;
-    //         ray.setDirection(dir);
-    //         inter = tracer.trace(*arg->shape, ray);
-    //         // inter = arg->shape->intersect(ray);
-    //  
-    //         if (inter)
-    //         {
-    //             res = inter.getPoint();
-    //             res.apply(inter.toGlobal());
-    //             norm = inter.getNormal();
-    //             norm.apply(inter.toGlobal());
-    //  
-    //             cur = ls < res;
-    //             ray2.setOrigin(res);
-    //             ray2.setDirection(cur);
-    //  
-    //             ref = 2 * (cur & norm) / norm.lengthSqr() * norm - cur;
-    //  
-    //             // inter = arg->shape->intersect(ray2);
-    //             inter = tracer.trace(*arg->shape, ray2);
-    //  
-    //             if (inter && 1 - FLT_EPSILON > inter.getT() && FLT_EPSILON < inter.getT())
-    //             {
-    //                 valg = 1 * (55);
-    //                 valr = 0.6 * (55);
-    //                 valb = 0.6 * (55);
-    //             }
-    //             else
-    //             {
-    //                 if (0 > (cur & norm))
-    //                     norm *= -1;
-    //  
-    //                 double suma = 5000;
-    //                 double sums = 1000;
-    //  
-    //                 double d = distance(ls, res);
-    //                 d = 1 / (d * d);
-    //                 double fraca = (cur.normalised() & norm.normalised()) * d;
-    //                 double fracs = pow(((-dir.normalise()) & ref.normalised()), 3) * d;
-    //                 int frac = 0.3 * suma * fraca + 0.8 * sums * fracs;
-    //                 if (frac > 205)
-    //                     frac = 205;
-    //                 // valg = (cur.normalised() & norm.normalised()) * double(400) / (d * d) + pow(((-dir.normalise()) & ref.normalised()), 3) * double(400) / (d * d) + 55;
-    //                 // valg = (cur.normalised() & norm.normalised()) * double(200) / (d * d) + 55;
-    //                 valg = 1 * (1 * frac + 55);
-    //                 valr = 0.6 * (1 * frac + 55);
-    //                 valb = 0.6 * (1 * frac + 55);
-    //             }
-    //  
-    //             // if (!inter || (inter && (FLT_EPSILON > fabs(inter.getT()) || inter.getT() > 1)))
-    //             // {
-    //             //     if (0 > (cur & norm))
-    //             //         norm *= -1;
-    //             //  
-    //             //     double d = distance(ls, res);
-    //             //     valg = (cur.normalised() & norm.normalised()) * double(200) / (d * d) + 55;
-    //             //     valr = valb = 55;
-    //             // }
-    //             // else
-    //             //     valr = valg = valb = 25;
-    //         }
-    //         else
-    //             valr = valg = valb = 0;
-    //  
-    //         if (valg > 255 || 0 > valg)
-    //             valg = 255;
-    //  
-    //         color.setRgb(valr, valg, valb);
-    //         arg->image->setPixelColor(arg->sx + i, arg->sy + arg->ly - j - 1, color);
-    //     }
-    // }
-
-    // pthread_exit(NULL);
-    // std::cout << "End: " << arg->i << " " << arg->j << std::endl;
     *arg->fin = false;
     return NULL;
 }
@@ -203,27 +215,39 @@ MainWindow::MainWindow(QWidget *parent)
     Transform<double, 3> trans;
     Transform<double, 3> trans2;
     Transform<double, 3> trans3;
+    Transform<double, 3> trans4;
     // trans2.accept(RotateStrategyOX<double>(M_PI / 2));
     trans2.accept(MoveStrategy<double>({-1.5, 0, 2}));
     // trans.accept(RotateStrategyOX<double>(-M_PI / 2.3));
 
     // shape1.reset(new Disk(center, Normal3<double>({0, 0.7, 0.7}), 5));
+    // shape1.reset(new Disk(center, Vector3<double>({0, 1, 0}), 5));
+    shape1.reset(new Cube(4, 3, 2));
     // shape1.reset(new Disk(center, Vector3<double>({0, 0.7, 0.7}), 5));
     // shape1.reset(new Cilinder(Vector3<double>({0, 0.7, 0.7}), center, 5, 2));
-    shape1.reset(new Cone(Vector3<double>({0, 0.7, 0.7}), center, 5, 2));
+    // shape1.reset(new Cone(Vector3<double>({0, 0.7, 0.7}), center, 5, 2));
     // shape2.reset(new Cilinder(Vector3<double>({0.7, 0.7, 0}), center, 5, 2));
     // shape1.reset(new Tube(Vector3<double>({0, 0.7, 0.7}), center, 5, 2));
     // shape2.reset(new Tube(Vector3<double>({0.7, 0.7, 0}), center, 5, 2));
     // shape1.reset(new Cilinder(Vector3<double>({0,0,1}), center, 5, 2));
     // shape1.reset(new Plane(center, Vector3<double>({1, 0, 0}), Vector3<double>({0, 0.7, -0.7}), 100, 100));
-    shape2.reset(new Cube(4, 3, 2));
+    // shape2.reset(new Cube(4, 3, 2));
     // shape2.reset(new Sphere(center, 2));
     // shape1.reset(new Cube(4, 3, 2));
     // shape2.reset(new Polygon());
     // shape3.reset(new Sphere(center, 2.25));
     // shape3.reset(new Cube(4, 3, 2));
+    // shape3.reset(new Plane(center, Vector3<double>({0, -1, 0}), Vector3<double>({0, 0, 1}), 100, 100));
+    // FilePolygonModelBuilder builder ("/storage/Downloads/obj/Lowpoly_tree_sample.obj");;
+    // FilePolygonModelBuilder builder ("/storage/Downloads/obj/Koltuk.obj");;
+    // FilePolygonModelBuilder builder ("/storage/Downloads/obj/091_W_Aya_10K.obj");;
+    // shape1 = builder.build();
 
-    shape1->add(shape2.get());
+    // double d = (double)1 / 300;
+    // trans4.accept(ScaleStrategy<double, 3>({d, d, d}));
+    // shape1->applyBasis(trans4);
+
+    // shape1->add(shape2.get());
     // shape1->add(shape3.get());
 
     // this->shape1->applyBasis(trans2);
@@ -238,19 +262,42 @@ MainWindow::MainWindow(QWidget *parent)
 
     this->shapes.push_back(shape1);
     this->shapes.push_back(shape2);
-    // this->shapes.push_back(shape3);
+    this->shapes.push_back(shape3);
     this->scene->add(shape1);
+    // this->scene->add(shape3);
 
     camera.reset(new NullObject());
     lighting.reset(new NullObject());
-    lighting2.reset(new NullObject());
+    // lighting2.reset(new NullObject());
+    // lighting2.reset(new Sphere(center, 2));
+    lighting2.reset(new Plane(center, Vector3<double>({0, -1, 0}), Vector3<double>({0, 0, 1}), 5, 5));
+    // lighting2.reset(new Polygon());
+    // lighting2.reset(new Cilinder(Vector3<double>({1, 0, 1}), center, 5, 0.25));
+    // lighting2.reset(new Disk(center, Vector3<double>({-1, 0, 0}), 1));
 
     trans.accept(MoveStrategy<double>({-5, 5, 4}));
+    // trans.accept(MoveStrategy<double>({-100, 0, 300}));
     lighting->applyBasis(trans);
-    trans.accept(MoveStrategy<double>({10, -10, 0}));
+    trans.accept(MoveStrategy<double>({5, -5, -4}));
+    // trans.accept(MoveStrategy<double>({200, 1000, 0}));
+    // trans.accept(RotateStrategyOY<double>(-M_PI / 2));
+    // trans.accept(RotateStrategyOX<double>(M_PI / 2));
+    trans.accept(MoveStrategy<double>({2, 1, 1}));
+    // trans.accept(MoveStrategy<double>({4, 0, 0}));
+    // trans.accept(MoveStrategy<double>({2, 1, 1}));
+    // trans.accept(RotateStrategyOY<double>(-M_PI / 3));
+    // trans.accept(MoveStrategy<double>({12, -5, -4}));
+    // trans.accept(RotateStrategyOZ<double>(M_PI / 6));
+    // trans.accept(MoveStrategy<double>({10, -5, -4}));
+    // trans.accept(MoveStrategy<double>({3, 0, 0}));
     lighting2->applyBasis(trans);
+    // shape3->applyBasis(trans);
     trans.accept(MoveStrategy<double>({-5, 5, 4}));
-    trans3.accept(MoveStrategy<double>({0, 0, 5}));
+    trans3.accept(MoveStrategy<double>({0, 0, 10}));
+    // trans3.accept(MoveStrategy<double>({0, 750, 700}));
+    // trans3.accept(MoveStrategy<double>({0, 750, 700}));
+    // trans3.accept(RotateStrategyOX<double>(-M_PI / 6));
+    // trans3.accept(RotateStrategyOX<double>(-M_PI / 2));
     camera->applyBasis(trans3);
 
     this->shapes.push_back(lighting);
@@ -262,105 +309,249 @@ MainWindow::MainWindow(QWidget *parent)
 
     std::shared_ptr<ShapeProperty> light_prop (new Lighting(lighting.get(), Intensity<>({5000, 5000, 5000})));
     // std::shared_ptr<ShapeProperty> light_prop (new Lighting(lighting.get(), Intensity<>({5000, 0, 0})));
-    std::shared_ptr<ShapeProperty> proj_prop (new PinholeProjector(camera.get(), 10));
-    std::shared_ptr<ShapeProperty> light_prop2 (new Lighting(lighting2.get(), Intensity<>({5000, 5000, 0})));
+    // std::shared_ptr<ShapeProperty> proj_prop (new PinholeProjector(camera.get(), 2.5));
+    // std::shared_ptr<ShapeProperty> proj_prop (new PinholeProjector(camera.get(), 750));
+    std::shared_ptr<ShapeProperty> proj_prop (new ThinLensProjector(camera.get(), 4.5, 1));
+    // std::shared_ptr<ShapeProperty> proj_prop (new OrthogonalProjector(camera.get()));
+    std::shared_ptr<ShapeProperty> light_prop2 (new Lighting(lighting2.get(), Intensity<>({800, 800, 1000})));
     // std::shared_ptr<ShapeProperty> light_prop2 (new Lighting(lighting2.get(), Intensity<>({0, 0, 5000})));
 
     this->scene->addProperty(light_prop);
     this->scene->addProperty(light_prop2);
     this->scene->addProperty(proj_prop);
 
+    // this->timer.setInterval(500);
+    this->timer.start(500);
+
+    QObject::connect(&this->timer, SIGNAL(timeout()), this, SLOT(timeout()));
     QObject::connect(this->ui->pushButton, SIGNAL(clicked()),
                      this, SLOT(canvas_clicked()));
+    QObject::connect(this->ui->pushButton_save, SIGNAL(clicked()),
+                     this, SLOT(save()));
 }
 
 void MainWindow::canvas_clicked()
 {
-    Transform<double, 3> trans;
-    trans.accept(RotateStrategyOY<double>(M_PI / 12));
-    this->shapes.front()->applyBasis(trans);
-    this->needredraw = true;
-    this->paintEvent(nullptr);
+    if (!this->needredraw)
+    {
+        Transform<double, 3> trans;
+        // trans.accept(RotateStrategyOY<double>(4 * M_PI / 3));
+        trans.accept(RotateStrategyOY<double>(M_PI / 12));
+        this->shapes.front()->applyBasis(trans);
+        // trans.accept(RotateStrategyOY<double>(-M_PI / 12));
+        // trans.accept(RotateStrategyOX<double>(M_PI / 12));
+        // this->shapes.back()->applyBasis(trans);
+        this->needredraw = true;
+        this->paintEvent(nullptr);
+    }
+}
+
+void *paint_master(void *_arg)
+{
+    pdarg_t *arg = (pdarg_t *)_arg;
+
+    std::cout << "start" << std::endl;
+
+    pthread_t tids[12];
+    pthread_attr_t tattrs[12];
+    parg_t args[12];
+    bool active[12] = {false};
+    std::list<SplitDisplayDecorator> displays;
+    size_t cnt = arg->cnt - 1;
+
+    size_t lx = arg->display->width(), ly = arg->display->height();
+    // size_t lx = _lx / arg->scale, ly = _ly / arg->scale;
+    QtDisplayAdapter display (*arg->display);
+
+    double aspect = (double)ly / lx;
+
+    display.setOffset(-4, 8 * aspect / 2);
+    display.setRealWidth(8);
+
+    // display.setOffset(-1, 2 * aspect / 2);
+    // display.setRealWidth(2);
+
+    // display.setOffset(1500, 3000 * aspect / 2);
+    // display.setOffset(-750 / aspect, 750);
+    // display.setRealHeight(1500);
+
+    // display.setOffset(-20, 40 * aspect / 2);
+    // display.setRealWidth(40);
+
+    size_t stepx = lx / cnt;
+    size_t stepy = ly / cnt;
+    size_t act = 0;
+
+    // std::cout << "w: " << display.width() << " h: " << display.height() << std::endl;
+
+    for (size_t i = 0; cnt > i; i++)
+        for (size_t j = 0; cnt > j; j++)
+        {
+            for (; active[act]; act = (act + 1) % cnt);
+
+            displays.push_back(SplitDisplayDecorator(display, i * stepx, j * stepy, stepx, stepy));
+            args[act].display = &displays.back();
+            args[act].scene = arg->scene;
+            args[act].fin = active + act;
+            *args[act].fin = true;
+            args[act].progres = &arg->progres;
+            args[act].mutex = &mut;
+
+            pthread_attr_init(tattrs + act);
+            pthread_create(tids + act, tattrs + act, pdrawfunc, args + act);
+            // pdrawfunc(args + i);
+        }
+
+    for (size_t i = 0; cnt > i; i++)
+        pthread_join(tids[i], NULL);
+
+    *arg->fin = true;
+
+    std::cout << "done" << std::endl;
+
+    return NULL;
 }
 
 void MainWindow::paintEvent(QPaintEvent *event)
 {
     QMainWindow::paintEvent(event);
 
-    if (this->needredraw)
+    if (this->needredraw && !this->start_draw)
+    {
+        size_t cnt = this->ui->spinBox_threads->value(),
+               scale = this->ui->spinBox_scale->value();
+
+        size_t lx = this->canvas->width() / scale,
+               ly = this->canvas->height() / scale;
+
+        this->progres = lx * ly;
+
+        this->screen = QImage(lx, ly, QImage::Format_RGBA64);
+
+        this->arg.display = &this->screen;
+        this->arg.scene = this->scene.get();
+        this->arg.fin = &this->stop_draw;
+        this->arg.cnt = cnt;
+        this->arg.progres = 0;
+
+        pthread_create(&this->thread, NULL, paint_master, &this->arg);
+
+        this->start_draw = true;
+        this->stop_draw = false;
+    }
+}
+
+void MainWindow::timeout(void)
+{
+    if (this->needredraw && this->stop_draw)
     {
         QPixmap *pixmap = *this->canvas;
         QPainter painter (pixmap);
         pixmap->fill(Qt::transparent);
 
-        std::cout << "start" << std::endl;
+        painter.drawImage(0, 0, this->screen.scaled(this->canvas->width(),
+                                                    this->canvas->height()));
+        this->canvas->update();
 
-        const size_t cnt = this->ui->spinBox_threads->value();
-
-        pthread_t tids[12];
-        pthread_attr_t tattrs[12];
-        parg_t args[12];
-        bool active[12] = {false};
-        std::list<SplitDisplayDecorator> displays;
-
-        size_t _lx = this->canvas->width(), _ly = this->canvas->height();
-        size_t scale = this->ui->spinBox_scale->value();
-        size_t lx = _lx / scale, ly = _ly / scale;
-        QImage image = QImage(lx, ly, QImage::Format_RGBA64);
-        QtDisplayAdapter display (image);
-
-        double aspect = (double)ly / lx;
-
-        display.setOffset(-4, 8 * aspect / 2);
-        display.setRealWidth(8);
-
-        size_t stepx = lx / cnt;
-        size_t stepy = ly / cnt;
-        size_t act = 0;
-
-        // std::cout << "w: " << display.width() << " h: " << display.height() << std::endl;
-
-        for (size_t i = 0; cnt > i; i++)
-            for (size_t j = 0; cnt > j; j++)
-            {
-                for (; active[act]; act = (act + 1) % cnt);
-
-                displays.push_back(SplitDisplayDecorator(display, i * stepx, j * stepy, stepx, stepy));
-                args[act].display = &displays.back();
-                args[act].scene = this->scene.get();
-                args[act].fin = active + act;
-                *args[act].fin = true;
-
-                pthread_attr_init(tattrs + act);
-                pthread_create(tids + act, tattrs + act, pdrawfunc, args + act);
-            }
-
-        for (size_t i = 0; cnt > i; i++)
-            pthread_join(tids[i], NULL);
-
-        // for (size_t i = 0; cnt > i; i++)
-        // {
-        //     // displays.push_back(SplitDisplayDecorator(display, i * stepx, 0, stepx, ly));
-        //     displays.push_back(SplitDisplayDecorator(display, 0, i * stepy, lx, stepy));
-        //     args[i].display = &displays.back();
-        //     args[i].scene = this->scene.get();
-        //  
-        //     pthread_attr_init(tattrs + i);
-        //     pthread_create(tids + i, tattrs + i, pdrawfunc, args + i);
-        //     // pdrawfunc(args + i);
-        // }
-        //  
-        // for (size_t i = 0; cnt > i; i++)
-        //     pthread_join(tids[i], NULL);
-
-        std::cout << "done" << std::endl;
-
-        painter.drawImage(0, 0, image.scaled(_lx, _ly));
         this->needredraw = false;
+        this->start_draw = false;
     }
 
-    this->canvas->update();
+    this->ui->progressBar->setValue((double)this->arg.progres / this->progres * 100);
 }
+
+void MainWindow::save(void)
+{
+    if (!this->needredraw && this->stop_draw)
+    {
+        QString filename = QFileDialog::getSaveFileName(this, "Save File",
+                                                        "",
+                                                        "Images (*.png *.xpm *.jpg)");
+
+        if ("" != filename)
+            this->screen.save(filename);
+    }
+}
+
+// void MainWindow::paintEvent(QPaintEvent *event)
+// {
+//     QMainWindow::paintEvent(event);
+//  
+//     if (this->needredraw)
+//     {
+//         QPixmap *pixmap = *this->canvas;
+//         QPainter painter (pixmap);
+//         pixmap->fill(Qt::transparent);
+//  
+//         std::cout << "start" << std::endl;
+//  
+//         const size_t cnt = this->ui->spinBox_threads->value();
+//  
+//         pthread_t tids[12];
+//         pthread_attr_t tattrs[12];
+//         parg_t args[12];
+//         bool active[12] = {false};
+//         std::list<SplitDisplayDecorator> displays;
+//  
+//         size_t _lx = this->canvas->width(), _ly = this->canvas->height();
+//         size_t scale = this->ui->spinBox_scale->value();
+//         size_t lx = _lx / scale, ly = _ly / scale;
+//         QImage image = QImage(lx, ly, QImage::Format_RGBA64);
+//         QtDisplayAdapter display (image);
+//  
+//         double aspect = (double)ly / lx;
+//  
+//         display.setOffset(-4, 8 * aspect / 2);
+//         display.setRealWidth(8);
+//  
+//         size_t stepx = lx / cnt;
+//         size_t stepy = ly / cnt;
+//         size_t act = 0;
+//  
+//         // std::cout << "w: " << display.width() << " h: " << display.height() << std::endl;
+//  
+//         for (size_t i = 0; cnt > i; i++)
+//             for (size_t j = 0; cnt > j; j++)
+//             {
+//                 for (; active[act]; act = (act + 1) % cnt);
+//  
+//                 displays.push_back(SplitDisplayDecorator(display, i * stepx, j * stepy, stepx, stepy));
+//                 args[act].display = &displays.back();
+//                 args[act].scene = this->scene.get();
+//                 args[act].fin = active + act;
+//                 *args[act].fin = true;
+//  
+//                 pthread_attr_init(tattrs + act);
+//                 pthread_create(tids + act, tattrs + act, pdrawfunc, args + act);
+//                 // pdrawfunc(args + i);
+//             }
+//  
+//         for (size_t i = 0; cnt > i; i++)
+//             pthread_join(tids[i], NULL);
+//  
+//         // for (size_t i = 0; cnt > i; i++)
+//         // {
+//         //     // displays.push_back(SplitDisplayDecorator(display, i * stepx, 0, stepx, ly));
+//         //     displays.push_back(SplitDisplayDecorator(display, 0, i * stepy, lx, stepy));
+//         //     args[i].display = &displays.back();
+//         //     args[i].scene = this->scene.get();
+//         //  
+//         //     pthread_attr_init(tattrs + i);
+//         //     pthread_create(tids + i, tattrs + i, pdrawfunc, args + i);
+//         //     // pdrawfunc(args + i);
+//         // }
+//         //  
+//         // for (size_t i = 0; cnt > i; i++)
+//         //     pthread_join(tids[i], NULL);
+//  
+//         std::cout << "done" << std::endl;
+//  
+//         painter.drawImage(0, 0, image.scaled(_lx, _ly));
+//         this->needredraw = false;
+//     }
+//  
+//     this->canvas->update();
+// }
 
 // void MainWindow::paintEvent(QPaintEvent *event)
 // {

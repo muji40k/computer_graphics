@@ -1,4 +1,7 @@
 #include "disk_sampler.h"
+#include "transform_strategies.h"
+
+#include "tools.h"
 
 DiskSampler::DiskSampler(const Point3<double> &center,
                          const Vector3<double> &normal,
@@ -43,9 +46,8 @@ void DiskSampler::undo(const Transform<double, 3> &transform)
 
 void DiskSampler::resetXY(void)
 {
-    Vector3<double> n (this->normal);
-
-    this->x = (n * Vector3<double>({1, 0, 0})).normalised();
-    this->y = (n * x).normalised();
+    Vector3<double> &n = this->normal;
+    this->x = tools::get_orthogonal_vector(n).normalised();
+    this->y = (n * this->x).normalised();
 }
 

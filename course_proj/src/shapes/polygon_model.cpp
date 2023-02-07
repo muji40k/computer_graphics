@@ -1,6 +1,9 @@
 #include <algorithm>
 #include "polygon_model.h"
 
+#include "composite_sampler.h"
+#include "bounding_sphere.h"
+
 const Attribute &PolygonModel::ATTRIBUTE(void)
 {
     static const Attribute attr = Object::ATTRIBUTE() \
@@ -9,18 +12,26 @@ const Attribute &PolygonModel::ATTRIBUTE(void)
     return attr;
 }
 
+PolygonModel::PolygonModel(void)
+{
+    this->sampler = std::make_shared<CompositeSampler>();
+    this->bounding = nullptr;
+}
+
 PolygonModel::~PolygonModel(void) {}
 
 bool PolygonModel::intersectBounding(const Ray3<double> &ray) const
 {
-    bool v = false;
+    // bool v = false;
     Ray3 tmp (ray);
     tmp.undo(*this->transform_global);
 
-    for (const_iterator it = this->begin(); !v && this->end() != it; it++)
-        v = (*it)->intersectBounding(tmp);
+    return this->bounding->intersect(tmp);
 
-    return v;
+    // for (auto it = this->lst.begin(); !v && this->lst.end() != it; it++)
+    //     v = (*it)->intersectBounding(tmp);
+    //  
+    // return v;
 }
 
 double PolygonModel::area(void) const
@@ -33,6 +44,11 @@ double PolygonModel::area(void) const
     return sum;
 }
 
+const ShapeSampler &PolygonModel::getSampler(void) const
+{
+    return *this->sampler;
+}
+
 const Attribute &PolygonModel::getAttribute(void) const
 {
     return PolygonModel::ATTRIBUTE();
@@ -42,58 +58,48 @@ Intersection PolygonModel::intersect(const Ray3<double> &ray) const
 {
     Intersection out = Intersection();
     Intersection current;
+    Ray3 tmp (ray);
+    tmp.undo(*this->transform_global);
 
-    for (Polygon *pol: this->lst)
-    {
-        current = pol->intersect(ray);
+    for (std::shared_ptr<Polygon> pol: this->lst)
+        if (pol->intersectBounding(tmp))
+        {
+            current = pol->intersect(tmp);
 
-        if (current && (!out || out.getT() > current.getT()))
-            out = current;
-    }
+            if (current && (!out || out.getT() > current.getT()))
+                out = current;
+        }
 
     if (out)
-    {
         out = Intersection(this, out.getPoint(), out.getNormal(), out.getT(),
-                           out.toGlobal());
-        out.apply(*this->transform_global);
-    }
+                           *this->transform_global);
 
     return out;
 }
 
 void PolygonModel::apply(const Transform<double, 3> &transform)
 {
-    for (Polygon *pol: this->lst)
+    for (std::shared_ptr<Polygon> pol: this->lst)
         pol->apply(transform);
+
+    this->bounding->apply(transform);
 }
 
 void PolygonModel::undo(const Transform<double, 3> &transform)
 {
-    for (Polygon *pol: this->lst)
+    for (std::shared_ptr<Polygon> pol: this->lst)
         pol->undo(transform);
+
+    this->bounding->undo(transform);
 }
 
-void PolygonModel::add(Polygon *shape)
+void PolygonModel::add(const Point3<double>  &a, const Point3<double>  &b,
+                       const Point3<double>  &c, const Normal3<double> &normal)
 {
-    if (nullptr == shape)
-        throw CALL_EX(NullPointerPolygonModelException);
+    this->lst.push_back(std::make_shared<Polygon>(a, b, c, normal));
+    this->sampler->append(&this->lst.back()->getSampler());
 
-    this->lst.push_back(shape);
-}
-
-void PolygonModel::remove(Polygon *shape)
-{
-    if (nullptr == shape)
-        throw CALL_EX(NullPointerPolygonModelException);
-
-    const size_t lim = this->lst.size();
-    size_t i = 0;
-    auto it = this->lst.begin();
-
-    for (; shape != *it && lim > i; i++, it++);
-
-    if (lim != i)
-        this->lst.erase(it);
+    this->expandBounding(a, b, c);
 }
 
 void PolygonModel::remove(const size_t index)
@@ -106,14 +112,6 @@ void PolygonModel::remove(const size_t index)
     for (size_t i = 0; index > i; i++, it++);
 
     this->lst.erase(it);
-}
-
-void PolygonModel::remove(iterator &it)
-{
-    auto _it = std::find(this->begin(), this->end(), *it);
-
-    if (_it != this->end())
-        it = this->lst.erase(it);
 }
 
 Polygon &PolygonModel::get(const size_t index)
@@ -145,33 +143,16 @@ size_t PolygonModel::getAmount(void) const
     return this->lst.size();
 }
 
-PolygonModel::iterator PolygonModel::begin(void)
+void PolygonModel::expandBounding(const Point3<double>  &a, const Point3<double>  &b,
+                                  const Point3<double>  &c)
 {
-    return this->lst.begin();
-}
+    if (!this->bounding)
+        this->bounding = std::make_shared<BoundingSphere>(a);
 
-PolygonModel::iterator PolygonModel::end(void)
-{
-    return this->lst.end();
-}
+    const Point3<double> *points[] = {&a, &b, &c};
 
-PolygonModel::const_iterator PolygonModel::begin(void) const
-{
-    return this->lst.cbegin();
-}
-
-PolygonModel::const_iterator PolygonModel::end(void) const
-{
-    return this->lst.cend();
-}
-
-PolygonModel::const_iterator PolygonModel::cbegin(void) const
-{
-    return this->lst.cbegin();
-}
-
-PolygonModel::const_iterator PolygonModel::cend(void) const
-{
-    return this->lst.cend();
+    for (size_t i = 0; 3 > i; i++)
+        if (!this->bounding->isInside(*points[i]))
+            this->bounding->expand(*points[i]);
 }
 

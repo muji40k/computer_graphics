@@ -18,8 +18,8 @@ PinholeProjection::PinholeProjection(const BaseDisplayAdapter &display,
 
     this->base_point.apply(res);
     this->pin.apply(res);
-    x.apply(res);
-    y.apply(res);
+    this->x.apply(res);
+    this->y.apply(res);
 
     double width = this->x.length(), height = this->y.length();
     this->x /= width;
@@ -60,3 +60,4 @@ Ray3<double> PinholeProjection::sampleRay(size_t i, size_t j) const
 
     return Ray3<double>(spoint, dir);
 }
+

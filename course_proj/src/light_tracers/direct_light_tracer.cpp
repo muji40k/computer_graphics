@@ -1,5 +1,5 @@
 #include "direct_light_tracer.h"
-#include "simple_shape_tracer.h"
+#include "light_scene_tracer.h"
 
 DirectLightTracer::DirectLightTracer(const Scene &scene) : scene(scene)
 {
@@ -8,15 +8,14 @@ DirectLightTracer::DirectLightTracer(const Scene &scene) : scene(scene)
     for (auto property : lst)
     {
         this->lights.push_back(std::static_pointer_cast<const Lighting>(property));
+        this->pcache.push_back(Point3<double>());
 
-        Point3<double> res;
+        Point3<double> &res = this->pcache.back();
 
         for (const Shape *current = &property->getTarget();
              nullptr != current;
              current = current->getParent())
             res.apply(current->getBasisTransform());
-
-        this->pcache.push_back(res);
     }
 }
 
@@ -25,7 +24,7 @@ DirectLightTracer::~DirectLightTracer(void) {}
 std::list<light_trace_t> DirectLightTracer::trace(const Point3<double> &point)
 {
     std::list<light_trace_t> out;
-    SimpleShapeTracer tracer;
+    LightSceneTracer tracer;
     Intersection inter;
 
     auto liter = this->lights.begin();
@@ -36,21 +35,8 @@ std::list<light_trace_t> DirectLightTracer::trace(const Point3<double> &point)
     for (double distance; liter != this->lights.end(); liter++, piter++)
     {
         ray.setDirection(point > *piter);
-        auto siter = this->scene.begin();
-        inter = Intersection();
-        bool i = false;
 
-        for (; !i && siter != this->scene.end(); siter++)
-        {
-            inter = tracer.trace(*(*siter), ray);
-
-            if (inter
-                && 1 - FLT_EPSILON > inter.getT()
-                && FLT_EPSILON < inter.getT())
-                i = true;
-        }
-
-        if (!i)
+        if (!tracer.trace(this->scene, ray))
         {
             distance = ray.getDirection().length();
             out.push_back({(*liter)->getEmission() / (distance * distance), ray.getDirection() / distance});

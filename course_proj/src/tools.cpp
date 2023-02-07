@@ -26,3 +26,34 @@ tools::sqr_eq_res_t tools::solve_sqr(double a, double b, double c)
     return out;
 }
 
+std::vector<std::string> tools::split(const std::string &target, const char delimiter,
+                                      const bool concat_delim)
+{
+    std::vector<std::string> out;
+    size_t i = 0, s = 0, is_token = 0;
+
+    for (; target.size() > i; i++)
+    {
+        if (delimiter == target[i])
+        {
+            if (is_token)
+            {
+                out.push_back(target.substr(s, i - s));
+                is_token = 0;
+            }
+            else if (!concat_delim)
+                out.push_back("");
+        }
+        else if (!is_token)
+        {
+            is_token = 1;
+            s = i;
+        }
+    }
+
+    if (is_token)
+        out.push_back(target.substr(s, i - s));
+
+    return out;
+}
+

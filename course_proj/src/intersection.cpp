@@ -5,10 +5,11 @@ Intersection::~Intersection(void) {};
 
 Intersection::Intersection(const Shape *const shape,
                            const Point3<double> &point,
+                           const Point2<double> &pointuv,
                            const Normal3<double> &normal,
                            double t,
                            const Transform<double, 3> &transform)
-    : valid(true), t(t), point(point), normal(normal),
+    : valid(true), t(t), point(point), pointuv(pointuv), normal(normal),
       transform(transform), shape(shape)
 {
     if (!shape)

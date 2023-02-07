@@ -8,6 +8,8 @@
 #include <QVector>
 #include <QList>
 #include <QPair>
+#include <QTimer>
+#include <QFileDialog>
 
 #include "ui_mainwindow.h"
 #include "qcanvas.h"
@@ -19,6 +21,7 @@
 #include "lighting.h"
 #include "orthogonal_projector.h"
 #include "pinhole_projector.h"
+#include "thin_lens_projector.h"
 #include "projection.h"
 
 #include "shape.h"
@@ -31,6 +34,15 @@
 #include "cone.h"
 #include "tube.h"
 #include "null_object.h"
+
+typedef struct
+{
+    QImage *display;
+    Scene  *scene;
+    bool   *fin;
+    size_t  cnt;
+    size_t  progres;
+} pdarg_t;
 
 class MainWindow : public QMainWindow
 {
@@ -52,8 +64,20 @@ class MainWindow : public QMainWindow
         QList<QPair<QPoint, int>> list;
         std::list<std::shared_ptr<Shape>> shapes;
         std::list<std::shared_ptr<ShapeProperty>> properties;
+        QTimer timer;
+
+        bool start_draw = false;
+        bool stop_draw = false;
+        size_t progres;
+        QImage screen;
+        pdarg_t arg;
+        pthread_t thread;
 
         void paintEvent(QPaintEvent *event);
+
+    private slots:
+        void timeout(void);
+        void save(void);
 };
 
 #endif

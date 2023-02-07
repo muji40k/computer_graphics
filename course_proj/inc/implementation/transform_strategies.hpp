@@ -33,7 +33,7 @@ ScaleStrategy<Type, nDim>::ScaleStrategy(const std::initializer_list<Type> &list
     if (nDim < limit)
         limit = nDim;
 
-    auto it = list.begin;
+    auto it = list.begin();
 
     for (size_t i = 0; limit > i; i++, it++)
     {

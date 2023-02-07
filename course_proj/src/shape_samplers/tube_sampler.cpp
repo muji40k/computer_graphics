@@ -1,11 +1,13 @@
 #include "tube_sampler.h"
 
+#include "tools.h"
+
 TubeSampler::TubeSampler(const Vector3<double> &normal,
                          const Point3<double> &center,
                          double length, double radius)
 {
     this->normal = normal.normalised();
-    this->base = center + this->normal * length / 2;
+    this->base = center + this->normal * (-length) / 2;
     this->length = length;
     this->radius = radius;
 
@@ -45,9 +47,8 @@ void TubeSampler::undo(const Transform<double, 3> &transform)
 
 void TubeSampler::resetXY(void)
 {
-    Vector3<double> n (this->normal);
-
-    this->x = (n * Vector3<double>({1, 0, 0})).normalised();
-    this->y = (n * x).normalised();
+    Vector3<double> &n = this->normal;
+    this->x = tools::get_orthogonal_vector(n).normalised();
+    this->y = (n * this->x).normalised();
 }
 

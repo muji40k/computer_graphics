@@ -1,5 +1,7 @@
 #include "cone_sampler.h"
 
+#include "tools.h"
+
 ConeSampler::ConeSampler(const Vector3<double> &normal,
                          const Point3<double> &center,
                          double length, double radius)
@@ -48,9 +50,8 @@ void ConeSampler::undo(const Transform<double, 3> &transform)
 
 void ConeSampler::resetXY(void)
 {
-    Vector3<double> n (this->normal);
-
-    this->x = (n * Vector3<double>({1, 0, 0})).normalised();
-    this->y = (n * x).normalised();
+    Vector3<double> &n = this->normal;
+    this->x = tools::get_orthogonal_vector(n).normalised();
+    this->y = (n * this->x).normalised();
 }
 
