@@ -18,15 +18,7 @@ class Plane : public ObjectPrimitive
         static const Attribute &ATTRIBUTE(void);
 
     public:
-        Plane(const Point3<double> &center = Point3<double>(),
-              const Vector3<double> &x = Vector3<double>({1, 0, 0}),
-              const Vector3<double> &y = Vector3<double>({0, 1, 0}),
-              double lx = 5, double ly = 5);
-        Plane(const Normal3<double> &normal = Normal3<double>({0, 0, 1}),
-              const Point3<double> &center = Point3<double>(),
-              const Vector3<double> &x = Vector3<double>({1, 0, 0}),
-              const Vector3<double> &y = Vector3<double>({0, 1, 0}),
-              double lx = 5, double ly = 5);
+        Plane(double lx = 5, double lz = 5, bool flip_normal = false);
         virtual ~Plane();
 
         virtual bool intersectBounding(const Ray3<double> &ray) const override;
@@ -41,19 +33,13 @@ class Plane : public ObjectPrimitive
         virtual void undo(const Transform<double, 3> &transform) override;
 
     private:
-        std::shared_ptr<Point3<double>> center;
-        std::shared_ptr<Normal3<double>> normal;
-        std::shared_ptr<Normal3<double>> normal_in;
-        std::shared_ptr<Vector3<double>> vnormal;
-        std::shared_ptr<Vector3<double>> x;
-        std::shared_ptr<Vector3<double>> y;
         double lx;
-        double ly;
-        double ix;
-        double iy;
+        double lz;
+        bool flip;
         std::shared_ptr<Bounding> bounding;
         double space;
         std::shared_ptr<ShapeSampler> sampler;
+        std::shared_ptr<Transform<double, 3>> transform_local;
 };
 
 class CommonPlaneException : public CommonObjectPrimitiveException

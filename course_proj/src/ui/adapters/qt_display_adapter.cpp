@@ -18,16 +18,16 @@ size_t QtDisplayAdapter::height(void) const
 void QtDisplayAdapter::setAt(size_t i, size_t j, const Intensity<> &intensity)
 {
     if (i >= this->width() || j >= this->height())
-        throw CALL_EX(IndexViolationQtDisplayException);
+        throw CALL_EX(IndexViolationDisplayAdapterException);
 
     Intensity<> cint = intensity;
 
     for (size_t i = 0; cint.size() > i; i++)
     {
-        if (255 < cint[i])
-            cint[i] = 255;
+        if (1 < cint[i])
+            cint[i] = 1;
 
-        // cint[i] *= 255;
+        cint[i] *= 255;
     }
 
     this->image.setPixelColor(i, j, QColor(cint[0], cint[1], cint[2]));

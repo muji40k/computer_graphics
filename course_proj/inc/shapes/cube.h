@@ -34,6 +34,7 @@ class Cube : public ParametricModel
         std::list<std::shared_ptr<Plane>> lst;
         std::shared_ptr<Bounding> bounding;
         std::shared_ptr<ShapeSampler> sampler;
+        std::shared_ptr<Transform<double, 3>> transform_local;
 };
 
 class CommonCubeException : public CommonParametricModelException

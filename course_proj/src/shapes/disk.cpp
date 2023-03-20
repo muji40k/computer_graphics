@@ -6,6 +6,8 @@
 
 #include "disk_sampler.h"
 
+#include "tools.h"
+
 const Attribute &Disk::ATTRIBUTE(void)
 {
     static const Attribute attr = ObjectPrimitive::ATTRIBUTE() \
@@ -15,31 +17,28 @@ const Attribute &Disk::ATTRIBUTE(void)
 
 Disk::~Disk(void) {}
 
-Disk::Disk(const Point3<double> &center,
-           const Vector3<double> &normal,
-           double radius)
+Disk::Disk(double radius, bool flip_normal)
 {
     if (0 > radius)
         throw CALL_EX(NegativeRadiusDiskException);
 
-    this->center = std::make_shared<Point3<double>>(center);
-    this->normal = std::make_shared<Vector3<double>>(normal);
     this->radius = radius;
     this->rsqr = radius * radius;
+    this->flip = flip_normal;
 
-    this->bounding = std::make_shared<BoundingSphere>(center);
-    this->bounding->expand(center + Vector3<double>({radius, 0, 0}));
-    // this->bounding->expand(center + Vector3<double>({0, radius, 0}));
-    this->bounding->expand(center + Vector3<double>({-radius, 0, 0}));
-    // this->bounding->expand(center + Vector3<double>({0, -radius, 0}));
+    this->bounding = std::make_shared<BoundingSphere>(Point3<double>());
+    this->bounding->expand(Point3<double>() + Vector3<double>({radius, 0, 0}));
+    this->bounding->expand(Point3<double>() + Vector3<double>({-radius, 0, 0}));
+    this->transform_local = std::make_shared<Transform<double, 3>>();
 
-    this->sampler = std::make_shared<DiskSampler>(center, normal, radius);
+    this->sampler = std::make_shared<DiskSampler>(radius);
 }
 
 bool Disk::intersectBounding(const Ray3<double> &ray) const
 {
     Ray3 tmp (ray);
     tmp.undo(*this->transform_global);
+    tmp.undo(*this->transform_local);
 
     return this->bounding->intersect(tmp);
 }
@@ -55,17 +54,38 @@ Intersection Disk::intersect(const Ray3<double> &ray) const
 
     Ray3<double> tmp (ray);
     tmp.undo(*this->transform_global);
-    double t = ((tmp.getOrigin() > *(this->center)) & *(this->normal)) \
-               / (tmp.getDirection() & *(this->normal));
+    tmp.undo(*this->transform_local);
 
-    if (FLT_EPSILON > t)
+    Point3<double> center;
+    Normal3<double> normal {0, 1, 0};
+
+    if (this->flip)
+        normal.y = -1;
+
+    tools::intersection_res_t res = tools::intersect_plane(center, normal, tmp);
+
+    if (!res.valid || FLT_EPSILON > res.t)
         return out;
 
-    Point3<double> point = tmp(t);
+    Point3<double> point = tmp(res.t);
+    Vector3<double> k (center > point);
+    double distance = k.length();
 
-    if (this->radius > distance(point, *(this->center)))
-        out = Intersection(this, point, Normal3<double>(*(this->normal)), t,
-                           *this->transform_global);
+    if (this->radius > distance)
+    {
+        double idistance = (double)1 / distance;
+
+        double cosx = k.z * idistance;
+        double cosy = k.x * idistance;
+
+        double u = ((cosy > -FLT_EPSILON) ? acos(cosx) : 2 * M_PI - acos(cosx)) \
+                   / (2 * M_PI);
+        double v = distance / this->radius;
+
+        out = Intersection(this, point, Point2<double>(u, v),
+                           Normal3<double>(normal), res.t,
+                           *this->transform_local + *this->transform_global);
+    }
 
     return out;
 }
@@ -82,17 +102,13 @@ const ShapeSampler &Disk::getSampler(void) const
 
 void Disk::apply(const Transform<double, 3> &transform)
 {
-    this->center->apply(transform);
-    this->normal->apply(transform);
-    this->bounding->apply(transform);
+    *(this->transform_local) += transform;
     this->sampler->apply(transform);
 }
 
 void Disk::undo(const Transform<double, 3> &transform)
 {
-    this->center->undo(transform);
-    this->normal->undo(transform);
-    this->bounding->undo(transform);
+    *(this->transform_local) += transform.inversed();
     this->sampler->undo(transform);
 }
 

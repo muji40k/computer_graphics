@@ -4,6 +4,7 @@
 #include "base_exception.h"
 
 #include "projector.h"
+#include "scene.h"
 
 class ThinLensProjector : public Projector
 {
@@ -12,7 +13,9 @@ class ThinLensProjector : public Projector
         static const Attribute &ATTRIBUTE(void);
 
     public:
-        ThinLensProjector(Shape *target, const double focus, const double aperture);
+        ThinLensProjector(Shape *target, const Scene &scene,
+                          const double focus, const double aperture,
+                          const bool autofocus=false);
         virtual ~ThinLensProjector(void) override;
 
         double getFocusDistance(void);
@@ -21,36 +24,25 @@ class ThinLensProjector : public Projector
         double getAperture(void);
         void setAperture(const double aperture);
 
+        void setAutofocus(const bool state);
+
         virtual std::shared_ptr<Projection> project(const BaseDisplayAdapter &display) const override;
 
         virtual const Attribute &getAttribute(void) const override;
 
     private:
+        const Scene &scene;
+        bool autofocus;
         double f;
         double a;
 };
 
-class NegativeFocusLProjectionException: public BaseException
-{
-    public:
-        NegativeFocusLProjectionException(void) = default;
-        NegativeFocusLProjectionException(const char *filename, const size_t line,
-                                            const char *function,
-                                            const char *message = "Given focus distance for thin lens is negative")
-            : BaseException(filename, line, function, message) {};
-        ~NegativeFocusLProjectionException(void) = default;
-};
-
-class NegativeApertureLProjectionException: public BaseException
-{
-    public:
-        NegativeApertureLProjectionException(void) = default;
-        NegativeApertureLProjectionException(const char *filename, const size_t line,
-                                            const char *function,
-                                            const char *message = "Given aperture for thin lens is negative")
-            : BaseException(filename, line, function, message) {};
-        ~NegativeApertureLProjectionException(void) = default;
-};
+DEF_EX(CommonThinLensProjectorException, CommonProjectorException,
+       "General thin-lens projector exception");
+DEF_EX(NegativeFocusLProjectionException, CommonThinLensProjectorException,
+       "Given focus distance for thin lens is negative");
+DEF_EX(NegativeApertureLProjectionException, CommonThinLensProjectorException,
+       "Given aperture for thin lens is negative");
 
 #endif
 

@@ -1,16 +1,17 @@
 #ifndef _TUBE_SMAPLER_H_
 #define _TUBE_SMAPLER_H_
 
+#include <memory>
+
 #include "shape_sampler.h"
 
+#include "transform.h"
 #include "vector.h"
 
 class TubeSampler : public ShapeSampler
 {
     public:
-        TubeSampler(const Vector3<double> &normal = Vector3<double>({0, 0, 1}),
-                    const Point3<double> &center = Point3<double>(),
-                    double length = 5, double radius = 5);
+        TubeSampler(double length = 5, double radius = 5);
         virtual ~TubeSampler(void) override;
         virtual bool isSamplabel(void) const override;
         virtual Point3<double> get(void) const override;
@@ -20,15 +21,9 @@ class TubeSampler : public ShapeSampler
         virtual void undo(const Transform<double, 3> &transform) override;
 
     private:
-        void resetXY(void);
-
-    private:
-        Point3<double> base;
-        Vector3<double> normal;
-        Vector3<double> x;
-        Vector3<double> y;
         double length;
         double radius;
+        std::shared_ptr<Transform<double, 3>> transform;
 };
 
 #endif

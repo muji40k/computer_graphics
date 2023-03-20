@@ -7,6 +7,8 @@
 
 #include "polygon_sampler.h"
 
+#include "tools.h"
+
 const Attribute &Polygon::ATTRIBUTE(void)
 {
     static const Attribute attr = ObjectPrimitive::ATTRIBUTE() \
@@ -18,7 +20,9 @@ const Attribute &Polygon::ATTRIBUTE(void)
 Polygon::~Polygon(void) {}
 
 Polygon::Polygon(const Point3<double> &a, const Point3<double> &b,
-                 const Point3<double> &c, const Normal3<double> &normal)
+                 const Point3<double> &c, const Normal3<double> &normal,
+                 const Point2<double> &uva, const Point2<double>  &uvb,
+                 const Point2<double> &uvc)
 {
     Vector3 tmp1 = a < b, tmp2 = c < b;
     Vector3 n = tmp1 * tmp2;
@@ -67,6 +71,19 @@ Polygon::Polygon(const Point3<double> &a, const Point3<double> &b,
     this->bounding->expand(b);
     this->bounding->expand(c);
 
+    for (size_t i = 0; 3 > i; i++)
+    {
+        this->points[i] = std::make_shared<Point3<double>>();
+        this->pointsuv[i] = std::make_shared<Point2<double>>();
+    }
+
+    *this->points[0] = a;
+    *this->points[1] = b;
+    *this->points[2] = c;
+    *this->pointsuv[0] = uva;
+    *this->pointsuv[1] = uvb;
+    *this->pointsuv[2] = uvc;
+
     this->sampler = std::make_shared<PolygonSampler>(a, b, c);
 }
 
@@ -99,13 +116,15 @@ Intersection Polygon::intersect(const Ray3<double> &ray) const
 
     Ray3<double> tmp (ray);
     tmp.undo(*this->transform_global);
-    double t = ((tmp.getOrigin() > *(this->center)) & *(this->normal)) \
-               / (tmp.getDirection() & *(this->normal));
 
-    if (FLT_EPSILON > t)
+    tools::intersection_res_t res = tools::intersect_plane(*this->center,
+                                                           *this->normal,
+                                                           tmp);
+
+    if (!res.valid || FLT_EPSILON > res.t)
         return out;
 
-    Point3<double> point = tmp(t);
+    Point3<double> point = tmp(res.t);
 
     Vector3<double> dir = *this->center > point;
     bool valid = true;
@@ -115,8 +134,26 @@ Intersection Polygon::intersect(const Ray3<double> &ray) const
             valid = false;
 
     if (valid)
-        out = Intersection(this, point, *(this->normal_in), t,
-                           *this->transform_global);
+    {
+        Vector3<double> a = *(this->points[0]) > *(this->points[1]);
+        Vector3<double> n = a * Vector3<double>(*this->normal);
+
+        Vector3<double> v = *(this->points[2]) > point;
+
+        double t = - ((*(this->points[0]) > *(this->points[2])) & n) / (v & n);
+        double k = distance(*(this->points[0]), (*(this->points[2]) + v * t)) \
+                   / a.length();
+
+        Point2<double> uv;
+
+        if (FLT_EPSILON < fabs(t))
+            uv = *this->pointsuv[0] \
+                 + (*(this->pointsuv[0]) > *(this->pointsuv[1])) * k / t \
+                 + (*(this->pointsuv[0]) > *(this->pointsuv[2])) * (t - 1) / t;
+
+        out = Intersection(this, point, uv, *(this->normal_in),
+                           res.t, *this->transform_global);
+    }
 
     return out;
 }
@@ -129,6 +166,7 @@ void Polygon::apply(const Transform<double, 3> &transform)
     {
         this->normals[i]->apply(transform);
         this->lnormalssqr[i] = this->normals[i]->lengthSqr();
+        this->points[i]->apply(transform);
     }
 
     this->normal_in->apply(transform);
@@ -142,8 +180,9 @@ void Polygon::undo(const Transform<double, 3> &transform)
 {
     for (size_t i = 0; 3 > i; i++)
     {
-        this->normals[i]->apply(transform);
+        this->normals[i]->undo(transform);
         this->lnormalssqr[i] = this->normals[i]->lengthSqr();
+        this->points[i]->undo(transform);
     }
 
     this->normal_in->undo(transform);

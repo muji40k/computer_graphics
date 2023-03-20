@@ -1,39 +1,43 @@
 #include "thin_lens_projection.h"
 
+#include "simple_scene_tracer.h"
+
 #include <cmath>
 
 ThinLensProjection::ThinLensProjection(const BaseDisplayAdapter &display,
                                        const Shape &shape, const double radius,
                                        const double focus)
 {
-    this->x = Vector3<double>({display.realWidth(), 0, 0});
-    this->y = Vector3<double>({0, display.realHeight(), 0});
-    this->center = Point3<double>();
-    this->base = Point3<double>({-display.offsetX(), -display.offsetY(), 2 * focus});
+    Transform<double, 3> res = this->getTransform(shape);
+    this->init(display, res, radius, focus);
+}
 
-    Transform<double, 3> res;
+ThinLensProjection::ThinLensProjection(const BaseDisplayAdapter &display,
+                                       const Shape &shape, const Scene &scene,
+                                       const double radius)
+{
+    Transform<double, 3> res = this->getTransform(shape);
 
-    for (const Shape *current = &shape;
-         nullptr != current;
-         current = current->getParent())
-        res += current->getBasisTransform();
+    double focus = 0;
+    SimpleSceneTracer tracer;
+    Point3<double> center;
+    Vector3<double> vector ({0, 0, -1});
+    center.apply(res);
+    vector.apply(res);
+    Ray3<double> ray (center, vector);
 
-    this->base.apply(res);
-    this->center.apply(res);
-    this->x.apply(res);
-    this->y.apply(res);
+    Intersection inter = tracer.trace(scene, ray);
 
-    double width = this->x.length(), height = this->y.length();
-    this->x /= width;
-    this->y /= height;
+    if (inter)
+    {
+        Point3<double> tmp = inter.getPoint();
+        tmp.apply(inter.toGlobal());
+        Vector3<double> vtmp (center, tmp);
+        vtmp.undo(res);
+        focus = vtmp.length() / 2;
+    }
 
-    this->lim_x = display.width();
-    this->lim_y = display.height();
-
-    this->pixel_width = width / (display.width() - 1);
-    this->pixel_height = height / (display.height() - 1);
-
-    this->radius = radius;
+    this->init(display, res, radius, focus);
 }
 
 ThinLensProjection::~ThinLensProjection(void) {}
@@ -65,5 +69,45 @@ Ray3<double> ThinLensProjection::sampleRay(size_t i, size_t j) const
 
     return Ray3<double>(lpoint,
                         (lpoint > (this->center + ((spoint > lpoint) / 2))).normalised());
+}
+
+void ThinLensProjection::init(const BaseDisplayAdapter &display,
+                              const Transform<double> &trans,
+                              const double radius,
+                              const double focus)
+{
+    this->x = Vector3<double>({display.realWidth(), 0, 0});
+    this->y = Vector3<double>({0, display.realHeight(), 0});
+    this->center = Point3<double>();
+    this->base = Point3<double>({-display.offsetX(), -display.offsetY(), 2 * focus});
+
+    this->base.apply(trans);
+    this->center.apply(trans);
+    this->x.apply(trans);
+    this->y.apply(trans);
+
+    double width = this->x.length(), height = this->y.length();
+    this->x /= width;
+    this->y /= height;
+
+    this->lim_x = display.width();
+    this->lim_y = display.height();
+
+    this->pixel_width = width / (display.width() - 1);
+    this->pixel_height = height / (display.height() - 1);
+
+    this->radius = radius;
+}
+
+Transform<double, 3> ThinLensProjection::getTransform(const Shape &shape)
+{
+    Transform<double, 3> res;
+
+    for (const Shape *current = &shape;
+         nullptr != current;
+         current = current->getParent())
+        res += current->getBasisTransform();
+
+    return res;
 }
 

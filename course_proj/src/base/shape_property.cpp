@@ -9,9 +9,6 @@ const Attribute &ShapeProperty::ATTRIBUTE(void)
 
 ShapeProperty::ShapeProperty(Shape *target)
 {
-    if (nullptr == target)
-        throw CALL_EX(NullPointerShapePropertyException);
-
     this->target = target;
 }
 

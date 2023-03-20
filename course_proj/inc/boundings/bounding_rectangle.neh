@@ -1,0 +1,32 @@
+#ifndef _BOUNDING_RECTANGLE_H_
+#define _BOUNDING_RECTANGLE_H_
+
+#include "bounding.h"
+
+class BoundingRectangle : public Bounding
+{
+    public:
+        BoundingRectangle(const Point3<double> &start);
+        BoundingRectangle(const BoundingRectangle &bounding);
+        BoundingRectangle(BoundingRectangle &&bounding);
+        virtual ~BoundingRectangle(void);
+
+        virtual void expand(const Point3<double> &point) override;
+        virtual void expand(const std::list<Point3<double>> &points) override;
+        virtual bool isInside(const Point3<double> &point) const override;
+        virtual bool intersect(const Ray3<double> &ray) const override;
+
+        virtual void apply(const Transform<double, 3> &transform) override;
+        virtual void undo(const Transform<double, 3> &transform) override;
+
+    private:
+        Point3<double> low;
+        Point3<double> high;
+
+        Point3<double> combine(const size_t i, const size_t j, const size_t k) const;
+        Point3<double> &operator [] (const size_t i);
+        const Point3<double> &operator [] (const size_t i) const;
+};
+
+#endif
+

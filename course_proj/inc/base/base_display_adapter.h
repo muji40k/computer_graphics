@@ -33,16 +33,12 @@ class BaseDisplayAdapter
         double real_height = 0;
 };
 
-class NegativeSizeDisplayAdapterException: public BaseException
-{
-    public:
-        NegativeSizeDisplayAdapterException(void) = default;
-        NegativeSizeDisplayAdapterException(const char *filename, const size_t line,
-                                            const char *function,
-                                            const char *message = "Given display size is negative")
-            : BaseException(filename, line, function, message) {};
-        ~NegativeSizeDisplayAdapterException(void) = default;
-};
+DEF_EX(CommonDisplayAdapterException, BaseException,
+       "General display adapter exception");
+DEF_EX(NegativeSizeDisplayAdapterException, CommonDisplayAdapterException,
+       "Given display size is negative");
+DEF_EX(IndexViolationDisplayAdapterException, CommonDisplayAdapterException,
+       "Index out of display range");
 
 #endif
 

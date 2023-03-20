@@ -4,6 +4,7 @@
 #include "base_exception.h"
 
 #include "shape.h"
+#include "scene.h"
 #include "projection.h"
 #include "base_display_adapter.h"
 
@@ -16,10 +17,20 @@ class ThinLensProjection : public Projection
         ThinLensProjection(const BaseDisplayAdapter &display,
                            const Shape &shape, const double radius,
                            const double focus);
+        ThinLensProjection(const BaseDisplayAdapter &display,
+                           const Shape &shape, const Scene &scene,
+                           const double radius);
         virtual ~ThinLensProjection(void) override;
 
         virtual Ray3<double> spawnRay(size_t i, size_t j) const override;
         virtual Ray3<double> sampleRay(size_t i, size_t j) const override;
+
+    private:
+        void init(const BaseDisplayAdapter &display,
+                  const Transform<double> &trans,
+                  const double radius, const double focus);
+
+        Transform<double, 3> getTransform(const Shape &shape);
 
     private:
         size_t lim_x;

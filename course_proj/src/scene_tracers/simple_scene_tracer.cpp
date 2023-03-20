@@ -8,7 +8,7 @@ SimpleSceneTracer::SimpleSceneTracer(void)
 
 SimpleSceneTracer::~SimpleSceneTracer(void) {}
 
-Intersection SimpleSceneTracer::trace(const Scene &scene, const Ray3<double> ray)
+Intersection SimpleSceneTracer::trace(const Scene &scene, const Ray3<double> ray) const
 {
     Intersection inter, close;
 

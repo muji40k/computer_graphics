@@ -37,7 +37,7 @@ SamplingLightTracer::SamplingLightTracer(const Scene &scene, size_t samples)
 
 SamplingLightTracer::~SamplingLightTracer(void) {}
 
-std::list<light_trace_t> SamplingLightTracer::trace(const Point3<double> &point)
+std::list<light_trace_t> SamplingLightTracer::trace(const Point3<double> &point) const
 {
     std::list<light_trace_t> out;
     LightSceneTracer tracer;
@@ -88,7 +88,7 @@ std::list<light_trace_t> SamplingLightTracer::trace(const Point3<double> &point)
                 Normal3<double> test_n (inter.getNormal());
                 test_n.apply(*titer);
 
-                if (FLT_EPSILON > (test_n & ray.getDirection()))
+                if (-FLT_EPSILON > (test_n & ray.getDirection()))
                 {
                     distance = ray.getDirection().length();
                     distance = 1 / (distance * distance);
@@ -101,7 +101,7 @@ std::list<light_trace_t> SamplingLightTracer::trace(const Point3<double> &point)
 
         if (hit)
         {
-            avgv /= hit;
+            // avgv /= hit;
             avgv.normalise();
             out.push_back({avgi, avgv});
         }

@@ -36,6 +36,11 @@ const Point3<double> &Intersection::getPoint(void) const
     return this->point;
 }
 
+const Point2<double> &Intersection::getPointUV(void) const
+{
+    return this->pointuv;
+}
+
 const Normal3<double> &Intersection::getNormal(void) const
 {
     return this->normal;

@@ -1,12 +1,12 @@
 #include "projector.h"
 
-Projector::Projector(Shape *target) : ShapeProperty(target) {}
+Projector::Projector(Shape *target) : DedicatedProperty(target) {}
 
 Projector::~Projector(void) {}
 
 const Attribute &Projector::ATTRIBUTE(void)
 {
-    static const Attribute attr = ShapeProperty::ATTRIBUTE() \
+    static const Attribute attr = DedicatedProperty::ATTRIBUTE() \
                                   | Attribute(Projector::MAXATTR,
                                               {Projector::ATTRI});
     return attr;

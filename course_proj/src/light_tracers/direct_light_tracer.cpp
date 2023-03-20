@@ -21,7 +21,7 @@ DirectLightTracer::DirectLightTracer(const Scene &scene) : scene(scene)
 
 DirectLightTracer::~DirectLightTracer(void) {}
 
-std::list<light_trace_t> DirectLightTracer::trace(const Point3<double> &point)
+std::list<light_trace_t> DirectLightTracer::trace(const Point3<double> &point) const
 {
     std::list<light_trace_t> out;
     LightSceneTracer tracer;

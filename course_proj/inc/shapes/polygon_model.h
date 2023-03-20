@@ -32,8 +32,11 @@ class PolygonModel : public Object
         virtual void apply(const Transform<double, 3> &transform) override;
         virtual void undo(const Transform<double, 3> &transform) override;
 
-        void add(const Point3<double>  &a, const Point3<double>  &b,
-                 const Point3<double>  &c, const Normal3<double> &normal);
+        void add(const Point3<double> &a, const Point3<double>  &b,
+                 const Point3<double> &c, const Normal3<double> &normal,
+                 const Point2<double> &uva = Point2<double>(),
+                 const Point2<double> &uvb = Point2<double>({1, 0}),
+                 const Point2<double> &uvc = Point2<double>({0, 1}));
         void remove(const size_t index);
         Polygon &get(const size_t index);
         const Polygon &get(const size_t index) const;
@@ -47,6 +50,7 @@ class PolygonModel : public Object
         std::list<std::shared_ptr<Polygon>> lst;
         std::shared_ptr<ShapeSampler> sampler;
         std::shared_ptr<Bounding> bounding;
+        std::shared_ptr<Transform<double, 3>> transform_local;
 };
 
 class CommonPolygonModelException: public CommonObjectException

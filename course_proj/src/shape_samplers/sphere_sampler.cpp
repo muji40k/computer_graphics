@@ -1,11 +1,11 @@
 #include "sphere_sampler.h"
 #include <cmath>
 
-SphereSampler::SphereSampler(const Point3<double> &center, double radius)
+SphereSampler::SphereSampler(double radius)
 {
-    this->center = center;
     this->radius = radius;
     this->rsqr = radius * radius;
+    this->transform = std::make_shared<Transform<double, 3>>();
 }
 
 SphereSampler::~SphereSampler(void) {}
@@ -24,18 +24,20 @@ Point3<double> SphereSampler::get(void) const
     out.z = (1 - 2 * (std::rand() % 2)) \
             * sqrt(this->rsqr - out.x * out.x - out.y * out.y);
 
-    return out + this->center;
+    out.apply(*this->transform);
+
+    return out;
 }
 
 void SphereSampler::append(const ShapeSampler *) {}
 
 void SphereSampler::apply(const Transform<double, 3> &transform)
 {
-    this->center.apply(transform);
+    *this->transform += transform;
 }
 
 void SphereSampler::undo(const Transform<double, 3> &transform)
 {
-    this->center.undo(transform);
+    *this->transform += transform.inversed();
 }
 

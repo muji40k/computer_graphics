@@ -20,16 +20,5 @@ class QtDisplayAdapter : public BaseDisplayAdapter
         QImage &image;
 };
 
-class IndexViolationQtDisplayException: public BaseException
-{
-    public:
-        IndexViolationQtDisplayException(void) = default;
-        IndexViolationQtDisplayException(const char *filename, const size_t line,
-                                            const char *function,
-                                            const char *message = "Index out of display range")
-            : BaseException(filename, line, function, message) {};
-        ~IndexViolationQtDisplayException(void) = default;
-};
-
 #endif
 

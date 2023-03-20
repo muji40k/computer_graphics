@@ -15,9 +15,7 @@ class Disk : public ObjectPrimitive
         static const Attribute &ATTRIBUTE(void);
 
     public:
-        Disk(const Point3<double> &center,
-             const Vector3<double> &normal,
-             double radius);
+        Disk(double radius, bool flip_normal = false);
         virtual ~Disk();
 
         virtual bool intersectBounding(const Ray3<double> &ray) const override;
@@ -32,12 +30,13 @@ class Disk : public ObjectPrimitive
         virtual void undo(const Transform<double, 3> &transform) override;
 
     private:
-        std::shared_ptr<Point3<double>> center;
-        std::shared_ptr<Vector3<double>> normal;
         double radius;
         double rsqr;
+        bool flip;
         std::shared_ptr<Bounding> bounding;
         std::shared_ptr<ShapeSampler> sampler;
+
+        std::shared_ptr<Transform<double, 3>> transform_local;
 };
 
 class CommonDiskException: public CommonObjectPrimitiveException

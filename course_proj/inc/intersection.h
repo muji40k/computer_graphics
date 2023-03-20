@@ -30,7 +30,7 @@ class Intersection : public Transformable<double, 3>
         double getT(void) const;
         const Shape                *getShape(void)  const;
         const Point3<double>       &getPoint(void)  const;
-        const Point3<double>       &getPointUV(void)  const;
+        const Point2<double>       &getPointUV(void)  const;
         const Normal3<double>      &getNormal(void) const;
         const Transform<double, 3> &toGlobal(void)  const;
 

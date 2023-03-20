@@ -1,6 +1,7 @@
 #include "cilinder.h"
 
 #include "composite_sampler.h"
+#include "transform_strategies.h"
 
 const Attribute &Cilinder::ATTRIBUTE(void)
 {
@@ -10,20 +11,30 @@ const Attribute &Cilinder::ATTRIBUTE(void)
     return attr;
 }
 
-Cilinder::Cilinder(const Vector3<double> &normal, const Point3<double> &center,
-                   double length, double radius)
+Cilinder::Cilinder(double length, double radius)
 {
-    this->tube = std::make_shared<Tube>(normal, center, length, radius);
-    Vector3<double> v = normal.normalised();
+    this->tube = std::make_shared<Tube>(length, radius);
+
     length /= 2;
-    this->top = std::make_shared<Disk>(center + v * (length), v, radius);
-    this->bottom = std::make_shared<Disk>(center + v * (-length), -v, radius);
+
+    Transform<double, 3> trans;
+    trans.accept(MoveStrategy<double, 3>({0, length, 0}));
+    this->top = std::make_shared<Disk>(radius);
+    this->top->apply(trans);
+
+    trans.accept(MoveStrategy<double, 3>({0, -length, 0}));
+    trans.accept(RotateStrategyOZ<double>(M_PI));
+    trans.accept(MoveStrategy<double, 3>({0, -length, 0}));
+    this->bottom = std::make_shared<Disk>(radius);
+    this->bottom->apply(trans);
 
     this->sampler = std::make_shared<CompositeSampler>();
 
     this->sampler->append(&this->tube->getSampler());
     this->sampler->append(&this->top->getSampler());
     this->sampler->append(&this->bottom->getSampler());
+
+    this->transform_local = std::make_shared<Transform<double, 3>>();
 }
 
 Cilinder::~Cilinder() {}
@@ -32,6 +43,7 @@ bool Cilinder::intersectBounding(const Ray3<double> &ray) const
 {
     Ray3<double> tmp (ray);
     tmp.undo(*this->transform_global);
+    tmp.undo(*this->transform_local);
 
     return this->tube->intersectBounding(tmp);
 }
@@ -56,6 +68,7 @@ Intersection Cilinder::intersect(const Ray3<double> &ray) const
 {
     Ray3<double> tmp (ray);
     tmp.undo(*this->transform_global);
+    tmp.undo(*this->transform_local);
     Intersection out, current;
 
     out = this->tube->intersect(tmp);
@@ -70,24 +83,31 @@ Intersection Cilinder::intersect(const Ray3<double> &ray) const
         out = current;
 
     if (out)
-        out = Intersection(this, out.getPoint(), out.getNormal(), out.getT(),
-                           *this->transform_global);
+    {
+        Point3<double> tpoint = out.getPoint();;
+        Normal3<double> tnormal = out.getNormal();
+
+        tpoint.apply(out.toGlobal());
+        tnormal.apply(out.toGlobal());
+
+        out = Intersection(this, tpoint, out.getPointUV(),
+                           tnormal, out.getT(),
+                           *transform_local + *this->transform_global);
+    }
 
     return out;
 }
 
 void Cilinder::apply(const Transform<double, 3> &transform)
 {
-    this->tube->apply(transform);
-    this->top->apply(transform);
-    this->bottom->apply(transform);
+    *this->transform_local += transform;
+    this->sampler->apply(transform);
 }
 
 void Cilinder::undo(const Transform<double, 3> &transform)
 {
-    this->tube->undo(transform);
-    this->top->undo(transform);
-    this->bottom->undo(transform);
+    *this->transform_local += transform.inversed();
+    this->sampler->undo(transform);
 }
 
 

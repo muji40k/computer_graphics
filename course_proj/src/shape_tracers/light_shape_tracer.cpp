@@ -8,10 +8,9 @@ typedef struct
     Ray3<double> ray;
 } tracing_unit_t;
 
-LightShapeTracer::LightShapeTracer() {}
 LightShapeTracer::~LightShapeTracer() {}
 
-Intersection LightShapeTracer::trace(const Shape &shape, const Ray3<double> ray)
+Intersection LightShapeTracer::trace(const Shape &shape, const Ray3<double> ray) const
 {
     Intersection out = Intersection(), cout;
     std::list<tracing_unit_t> queue = {{&shape, ray}};
@@ -40,8 +39,8 @@ Intersection LightShapeTracer::trace(const Shape &shape, const Ray3<double> ray)
     }
 
     if (out)
-        out = Intersection(out.getShape(), out.getPoint(), out.getNormal(),
-                           out.getT(), Transform<double, 3>());
+        out = Intersection(out.getShape(), out.getPoint(), out.getPointUV(),
+                           out.getNormal(), out.getT(), Transform<double, 3>());
 
     return out;
 }

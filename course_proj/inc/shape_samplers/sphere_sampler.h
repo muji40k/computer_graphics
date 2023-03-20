@@ -1,13 +1,16 @@
 #ifndef _SPHERE_SAMPLER_H_
 #define _SPHERE_SAMPLER_H_
 
+#include <memory>
+
 #include "shape_sampler.h"
+
+#include "transform.h"
 
 class SphereSampler : public ShapeSampler
 {
     public:
-        SphereSampler(const Point3<double> &center = Point3<double>(),
-                      double radius = 5);
+        SphereSampler(double radius = 5);
         virtual ~SphereSampler(void) override;
         virtual bool isSamplabel(void) const override;
         virtual Point3<double> get(void) const override;
@@ -17,9 +20,9 @@ class SphereSampler : public ShapeSampler
         virtual void undo(const Transform<double, 3> &transform) override;
 
     private:
-        Point3<double> center;
         double radius;
         double rsqr;
+        std::shared_ptr<Transform<double, 3>> transform;
 };
 
 #endif

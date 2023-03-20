@@ -1,6 +1,16 @@
 #include <intensity.h>
 
 template <size_t nDim>
+template <size_t oDim>
+Intensity<nDim> &Intensity<nDim>::operator = (const Intensity<oDim> &intensity)
+{
+    const size_t limit = (nDim > oDim) ? oDim : nDim;
+
+    for (size_t i = 0; limit > i; i++)
+        (*this)[i] = intensity[i];
+}
+
+template <size_t nDim>
 void Intensity<nDim>::trim(void)
 {
     for (size_t i = 0; nDim > i; i++)
@@ -22,6 +32,15 @@ Intensity<nDim> Intensity<nDim>::operator - (const Intensity<nDim> &intensity) c
 {
     Intensity<nDim> out (*this);
     out -= intensity;
+
+    return out;
+}
+
+template <size_t nDim>
+Intensity<nDim> Intensity<nDim>::operator * (const Intensity<nDim> &intensity) const
+{
+    Intensity<nDim> out (*this);
+    out *= intensity;
 
     return out;
 }
@@ -59,6 +78,17 @@ template <size_t nDim>
 Intensity<nDim> &Intensity<nDim>::operator -= (const Intensity<nDim> &intensity)
 {
     static_cast<Point<double, nDim> &>(*this) -= intensity;
+    this->trim();
+
+    return *this;
+}
+
+template <size_t nDim>
+Intensity<nDim> &Intensity<nDim>::operator *= (const Intensity<nDim> &intensity)
+{
+    for (size_t i = 0; nDim > i; i++)
+        (*this)[i] *= intensity[i];
+
     this->trim();
 
     return *this;

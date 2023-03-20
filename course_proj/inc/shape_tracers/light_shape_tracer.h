@@ -9,10 +9,9 @@
 class LightShapeTracer : public ShapeTracer
 {
     public:
-        LightShapeTracer(void);
         virtual ~LightShapeTracer(void) override;
 
-        virtual Intersection trace(const Shape &shape, const Ray3<double> ray) override;
+        virtual Intersection trace(const Shape &shape, const Ray3<double> ray) const override;
 };
 
 

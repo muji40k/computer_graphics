@@ -26,15 +26,9 @@ class PinholeProjector : public Projector
         double f;
 };
 
-class NegativeOffsetPProjectionException: public BaseException
-{
-    public:
-        NegativeOffsetPProjectionException(void) = default;
-        NegativeOffsetPProjectionException(const char *filename, const size_t line,
-                                            const char *function,
-                                            const char *message = "Given offset for pinhole is negative")
-            : BaseException(filename, line, function, message) {};
-        ~NegativeOffsetPProjectionException(void) = default;
-};
+DEF_EX(CommonPProjectorException, CommonProjectorException,
+       "General pinhole projector exception");
+DEF_EX(NegativeOffsetPProjectorException, CommonPProjectorException,
+       "Given offset for pinhole is negative");
 
 #endif

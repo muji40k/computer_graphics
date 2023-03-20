@@ -17,7 +17,7 @@ class LightTracer
 {
     public:
         virtual ~LightTracer(void) = 0;
-        virtual std::list<light_trace_t> trace(const Point3<double> &point) = 0;
+        virtual std::list<light_trace_t> trace(const Point3<double> &point) const = 0;
 };
 
 #endif

@@ -12,8 +12,7 @@ class Sphere : public ParametricModel
         static const Attribute &ATTRIBUTE(void);
 
     public:
-        Sphere(const Point3<double> &center = Point3<double>(),
-               double radius = 5);
+        Sphere(double radius);
         virtual ~Sphere(void);
 
         virtual bool intersectBounding(const Ray3<double> &ray) const override;
@@ -28,11 +27,12 @@ class Sphere : public ParametricModel
         virtual void undo(const Transform<double, 3> &transform) override;
 
     private:
-        std::shared_ptr<Point3<double>> center;
         double radius;
         double radiussqr;
         std::shared_ptr<Bounding> bounding;
         std::shared_ptr<ShapeSampler> sampler;
+
+        std::shared_ptr<Transform<double, 3>> transform_local;
 };
 
 class CommonSphereException: public CommonParametricModelException

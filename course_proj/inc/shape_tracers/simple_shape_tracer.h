@@ -6,10 +6,9 @@
 class SimpleShapeTracer : public ShapeTracer
 {
     public:
-        SimpleShapeTracer(void);
         virtual ~SimpleShapeTracer(void) override;
 
-        virtual Intersection trace(const Shape &shape, const Ray3<double> ray) override;
+        virtual Intersection trace(const Shape &shape, const Ray3<double> ray) const override;
 };
 
 

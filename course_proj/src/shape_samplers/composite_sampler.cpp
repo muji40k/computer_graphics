@@ -1,5 +1,10 @@
 #include "composite_sampler.h"
 
+CompositeSampler::CompositeSampler(void)
+{
+    this->transform = std::make_shared<Transform<double, 3>>();
+}
+
 CompositeSampler::~CompositeSampler(void) {}
 
 bool CompositeSampler::isSamplabel(void) const { return true; }
@@ -11,7 +16,10 @@ Point3<double> CompositeSampler::get(void) const
 
     for (; i; i--, iter++);
 
-    return (*iter)->get();
+    Point3<double> out = (*iter)->get();
+    out.apply(*this->transform);
+
+    return out;
 }
 
 void CompositeSampler::append(const ShapeSampler *sampler)
@@ -27,6 +35,13 @@ void CompositeSampler::append(const ShapeSampler *sampler)
         this->samplers.push_back(sampler);
 }
 
-void CompositeSampler::apply(const Transform<double, 3> &) {}
-void CompositeSampler::undo(const Transform<double, 3> &) {}
+void CompositeSampler::apply(const Transform<double, 3> &transform)
+{
+    *this->transform += transform;
+}
+
+void CompositeSampler::undo(const Transform<double, 3> &transform)
+{
+    *this->transform += transform.inversed();
+}
 

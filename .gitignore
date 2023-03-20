@@ -9,4 +9,7 @@
 **/*.bkp
 **/test
 **/.tmux
+**/site
+**/img
+**/textures
 

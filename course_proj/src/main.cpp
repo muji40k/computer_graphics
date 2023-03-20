@@ -1,5 +1,8 @@
 #include <QApplication>
 
+#define STB_IMAGE_IMPLEMENTATION
+#include "stb_image.h"
+
 #include "mainwindow.h"
 #include <iostream>
 #include <math.h>
@@ -30,8 +33,25 @@
 #include <memory>
 #include "file_polygon_model_builder.h"
 
+// #include "solid_texture.h"
+#include "array_texture.h"
+
+#include <unordered_map>
+#include <map>
+
+#include "tools.h"
+
+std::ostream &operator << (std::ostream &stream, const Attribute &attr)
+{
+    for (size_t i = 0; 10 > i; i++)
+        stream << attr(i);
+
+    return stream;
+}
+
+#include "vector.h"
+
 int main(int argc, char **argv)
-// int main(void)
 {
     QApplication app (argc, argv);
     MainWindow window;
@@ -39,10 +59,4 @@ int main(int argc, char **argv)
     window.show();
 
     return app.exec();
-
-    // FilePolygonModelBuilder builder ("/storage/Downloads/obj/FinalBaseMesh.obj");;
-    // std::shared_ptr<Shape> obj = builder.build();
-    //  
-    // return 0;
 }
-

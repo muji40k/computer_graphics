@@ -44,7 +44,9 @@ ADDFLAGS =
 
 MOCFLAGS = -I$(DIR_HEADER) $(foreach dir, $(ADD_DIRS_CUI), -I$(DIR_HEADER)/$(DIR_CUI)/$(dir)) 
 
-.PHONY: build debug clean run test
+.PHONY: build debug clean run test default
+
+default: drun
 
 run: build
 run:

@@ -1,13 +1,10 @@
 #include "plane_sampler.h"
 
-PlaneSampler::PlaneSampler(const Point3<double> &center,
-                           const Vector3<double> &x,
-                           const Vector3<double> &y,
-                           double lx, double ly)
+PlaneSampler::PlaneSampler(double lx, double ly)
 {
-    this->base = center;
-    this->x = x * (double) lx / 2;
-    this->y = y * (double) ly / 2;
+    this->x = Vector3<double>({1, 0, 0}) * (double) lx / 2;
+    this->y = Vector3<double>({0, 0, 1}) * (double) ly / 2;
+    this->transform = std::make_shared<Transform<double, 3>>();
 }
 
 PlaneSampler::~PlaneSampler(void) {}
@@ -19,23 +16,22 @@ Point3<double> PlaneSampler::get(void) const
     double a = (double)1 - 2 * (double)std::rand() / RAND_MAX,
            b = (double)1 - 2 * (double)std::rand() / RAND_MAX;
 
-    return this->base + (a * this->x + b * this->y);
+    Point3<double> out = Point3<double>() + (a * this->x + b * this->y);
+    out.apply(*this->transform);
+
+    return out;
 }
 
 void PlaneSampler::append(const ShapeSampler *) {}
 
 void PlaneSampler::apply(const Transform<double, 3> &transform)
 {
-    this->base.apply(transform);
-    this->x.apply(transform);
-    this->y.apply(transform);
+    *this->transform += transform;
 }
 
 void PlaneSampler::undo(const Transform<double, 3> &transform)
 {
-    this->base.undo(transform);
-    this->x.undo(transform);
-    this->y.undo(transform);
+    *this->transform += transform.inversed();
 }
 
 

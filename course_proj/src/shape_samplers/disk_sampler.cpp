@@ -3,15 +3,10 @@
 
 #include "tools.h"
 
-DiskSampler::DiskSampler(const Point3<double> &center,
-                         const Vector3<double> &normal,
-                         double radius)
+DiskSampler::DiskSampler(double radius)
 {
-    this->center = center;
-    this->normal = normal;
     this->radius = radius;
-
-    this->resetXY();
+    this->transform = std::make_shared<Transform<double, 3>>();
 }
 
 DiskSampler::~DiskSampler(void) {}
@@ -23,31 +18,24 @@ Point3<double> DiskSampler::get(void) const
     double r = this->radius * sqrt((double)std::rand() / RAND_MAX),
            a = 2 * M_PI * (double)std::rand() / RAND_MAX;
 
-    return this->center + r * cos(a) * this->x + r * sin(a) * this->y;
+    Point3<double> center;
+    Vector3<double> x ({1, 0, 0}), y ({0, 0, 1});
+
+    Point3<double> out = center + r * cos(a) * x + r * sin(a) * y;
+    out.apply(*this->transform);
+
+    return out;
 }
 
 void DiskSampler::append(const ShapeSampler *) {}
 
 void DiskSampler::apply(const Transform<double, 3> &transform)
 {
-    this->center.apply(transform);
-    this->normal.apply(transform);
-
-    this->resetXY();
+    *this->transform += transform;
 }
 
 void DiskSampler::undo(const Transform<double, 3> &transform)
 {
-    this->center.undo(transform);
-    this->normal.undo(transform);
-
-    this->resetXY();
-}
-
-void DiskSampler::resetXY(void)
-{
-    Vector3<double> &n = this->normal;
-    this->x = tools::get_orthogonal_vector(n).normalised();
-    this->y = (n * this->x).normalised();
+    *this->transform += transform.inversed();
 }
 

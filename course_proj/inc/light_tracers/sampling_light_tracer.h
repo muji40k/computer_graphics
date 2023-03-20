@@ -14,7 +14,7 @@ class SamplingLightTracer : public LightTracer
     public:
         SamplingLightTracer(const Scene &scene, size_t sapmles);
         virtual ~SamplingLightTracer() override;
-        virtual std::list<light_trace_t> trace(const Point3<double> &point) override;
+        virtual std::list<light_trace_t> trace(const Point3<double> &point) const override;
 
     private:
         std::list<std::shared_ptr<const Lighting>> lights;

@@ -1,9 +1,10 @@
 #include "thin_lens_projector.h"
 #include "thin_lens_projection.h"
 
-ThinLensProjector::ThinLensProjector(Shape *target, const double focus,
-                                     const double aperture)
-    : Projector(target)
+ThinLensProjector::ThinLensProjector(Shape *target, const Scene &scene,
+                                     const double focus, const double aperture,
+                                     const bool autofocus)
+    : Projector(target), scene(scene), autofocus(autofocus)
 {
     if (0 > focus)
         throw CALL_EX(NegativeFocusLProjectionException);
@@ -19,10 +20,16 @@ ThinLensProjector::~ThinLensProjector(void) {}
 
 std::shared_ptr<Projection> ThinLensProjector::project(const BaseDisplayAdapter &display) const
 {
-    return std::shared_ptr<Projection>(new ThinLensProjection(display,
-                                                              this->getTarget(),
-                                                              this->a,
-                                                              this->f));
+    if (this->autofocus)
+        return std::shared_ptr<Projection>(new ThinLensProjection(display,
+                                                                  this->getTarget(),
+                                                                  this->scene,
+                                                                  this->a));
+    else
+        return std::shared_ptr<Projection>(new ThinLensProjection(display,
+                                                                  this->getTarget(),
+                                                                  this->a,
+                                                                  this->f));
 }
 
 double ThinLensProjector::getFocusDistance(void)
@@ -49,6 +56,11 @@ void ThinLensProjector::setAperture(const double aperture)
         throw CALL_EX(NegativeApertureLProjectionException);
 
     this->a = aperture;
+}
+
+void ThinLensProjector::setAutofocus(const bool state)
+{
+    this->autofocus = state;
 }
 
 const Attribute &ThinLensProjector::ATTRIBUTE(void)

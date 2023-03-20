@@ -14,9 +14,7 @@ class Tube : public ObjectPrimitive
         static const Attribute &ATTRIBUTE(void);
 
     public:
-        Tube(const Vector3<double> &normal = Vector3<double>({0, 0, 1}),
-             const Point3<double> &center = Point3<double>(),
-             double length = 5, double radius = 5);
+        Tube(double length, double radius);
         virtual ~Tube() override;
 
         virtual bool intersectBounding(const Ray3<double> &ray) const override;
@@ -31,13 +29,12 @@ class Tube : public ObjectPrimitive
         virtual void undo(const Transform<double, 3> &transform) override;
 
     private:
-        std::shared_ptr<Vector3<double>> normal;
-        std::shared_ptr<Point3<double>> center;
         double length;
         double radius;
         double rsqr;
         std::shared_ptr<Bounding> bounding;
         std::shared_ptr<ShapeSampler> sampler;
+        std::shared_ptr<Transform<double, 3>> transform_local;
 };
 
 class CommonTubeException : public CommonObjectPrimitiveException

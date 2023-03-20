@@ -104,12 +104,12 @@ std::list<std::shared_ptr<ShapeProperty>> Scene::getProperties(const Attribute &
     return out;
 }
 
-std::list<std::shared_ptr<ShapeProperty>> Scene::getProperties(std::shared_ptr<Shape> shape)
+std::list<std::shared_ptr<ShapeProperty>> Scene::getProperties(const Shape *const shape)
 {
     std::list<std::shared_ptr<ShapeProperty>> out;
 
     for (std::shared_ptr<ShapeProperty> prop : this->properties)
-        if (&(prop->getTarget()) == shape.get())
+        if (&(prop->getTarget()) == shape)
             out.push_back(prop);
 
     return out;
@@ -149,12 +149,12 @@ std::list<std::shared_ptr<const ShapeProperty>> Scene::getProperties(const Attri
     return out;
 }
 
-std::list<std::shared_ptr<const ShapeProperty>> Scene::getProperties(std::shared_ptr<Shape> shape) const
+std::list<std::shared_ptr<const ShapeProperty>> Scene::getProperties(const Shape *const shape) const
 {
     std::list<std::shared_ptr<const ShapeProperty>> out;
 
     for (std::shared_ptr<const ShapeProperty> prop : this->properties)
-        if (&(prop->getTarget()) == shape.get())
+        if (&(prop->getTarget()) == shape)
             out.push_back(prop);
 
     return out;

@@ -9,7 +9,7 @@ class SceneTracer
     public:
         virtual ~SceneTracer(void) = 0;
 
-        virtual Intersection trace(const Scene &scene, const Ray3<double> ray) = 0;
+        virtual Intersection trace(const Scene &scene, const Ray3<double> ray) const = 0;
 };
 
 #endif

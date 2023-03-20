@@ -3,11 +3,11 @@
 
 #include <memory>
 
-#include "shape_property.h"
+#include "dedicated_property.h"
 #include "projection.h"
 #include "base_display_adapter.h"
 
-class Projector : public ShapeProperty
+class Projector : public DedicatedProperty
 {
     public:
         static const size_t ATTRI = 1;
@@ -19,6 +19,8 @@ class Projector : public ShapeProperty
         virtual std::shared_ptr<Projection> project(const BaseDisplayAdapter &display) const = 0;
         virtual const Attribute &getAttribute(void) const override;
 };
+
+DEF_EX(CommonProjectorException, BaseException, "General projector exception");
 
 #endif
 

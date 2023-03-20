@@ -411,7 +411,7 @@ Normal3<Type> &Normal3<Type>::normalise(void)
 template <typename Type>
 Normal3<Type> Normal3<Type>::normalised(void) const
 {
-    return Normal3<Type>(static_cast<Normal<Type, 3> &>(*this).normalised());
+    return Normal3<Type>(static_cast<const Normal<Type, 3> &>(*this).normalised());
 }
 
 template <typename Type>

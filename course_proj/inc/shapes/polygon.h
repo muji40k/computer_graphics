@@ -17,9 +17,12 @@ class Polygon : public ObjectPrimitive
 
     public:
         Polygon(const Point3<double>  &a      = Point3<double>(),
-                const Point3<double>  &b      = Point3<double>({0, 1, 0}),
-                const Point3<double>  &c      = Point3<double>({1, 0, 0}),
-                const Normal3<double> &normal = Normal3<double>({0, 0, 1}));
+                const Point3<double>  &b      = Point3<double>({1, 0, 0}),
+                const Point3<double>  &c      = Point3<double>({0, 0, 1}),
+                const Normal3<double> &normal = Normal3<double>({0, 1, 0}),
+                const Point2<double>  &uva    = Point2<double>(),
+                const Point2<double>  &uvb    = Point2<double>({1, 0}),
+                const Point2<double>  &uvc    = Point2<double>({0, 1}));
         virtual ~Polygon();
 
         virtual bool intersectBounding(const Ray3<double> &ray) const override;
@@ -37,6 +40,10 @@ class Polygon : public ObjectPrimitive
         std::shared_ptr<Point3<double>> center;
         std::shared_ptr<Vector3<double>> normals[3];
         double lnormalssqr[3];
+
+        std::shared_ptr<Point3<double>> points[3];
+        std::shared_ptr<Point2<double>> pointsuv[3];
+
         double space;
 
         std::shared_ptr<Normal3<double>> normal_in;

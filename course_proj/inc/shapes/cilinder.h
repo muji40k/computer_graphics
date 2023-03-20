@@ -12,9 +12,7 @@ class Cilinder : public ParametricModel
         static const Attribute &ATTRIBUTE(void);
 
     public:
-        Cilinder(const Vector3<double> &normal = Vector3<double>({0, 0, 1}),
-                 const Point3<double> &center = Point3<double>(),
-                 double length = 5, double radius = 5);
+        Cilinder(double length, double radius);
         virtual ~Cilinder() override;
 
         virtual bool intersectBounding(const Ray3<double> &ray) const override;
@@ -33,6 +31,7 @@ class Cilinder : public ParametricModel
         std::shared_ptr<Disk> top;
         std::shared_ptr<Disk> bottom;
         std::shared_ptr<ShapeSampler> sampler;
+        std::shared_ptr<Transform<double, 3>> transform_local;
 };
 
 class CommonCilinderException: public CommonParametricModelException

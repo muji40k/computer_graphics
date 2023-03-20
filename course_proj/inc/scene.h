@@ -29,12 +29,12 @@ class Scene
         void addProperty(std::shared_ptr<ShapeProperty> propetry);
 
         std::list<std::shared_ptr<ShapeProperty>> getProperties(const Attribute &attr);
-        std::list<std::shared_ptr<ShapeProperty>> getProperties(std::shared_ptr<Shape> shape);
+        std::list<std::shared_ptr<ShapeProperty>> getProperties(const Shape *const shape);
         std::list<std::shared_ptr<Shape>> getShapes(const Attribute &attr);
         void removeProperty(std::shared_ptr<ShapeProperty> &property);
 
         std::list<std::shared_ptr<const ShapeProperty>> getProperties(const Attribute &attr) const;
-        std::list<std::shared_ptr<const ShapeProperty>> getProperties(std::shared_ptr<Shape> shape) const;
+        std::list<std::shared_ptr<const ShapeProperty>> getProperties(const Shape *const shape) const;
         std::list<std::shared_ptr<const Shape>> getShapes(const Attribute &attr) const;
 
         iterator begin(void);

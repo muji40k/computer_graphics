@@ -11,7 +11,7 @@ class LightSceneTracer : public SceneTracer
     public:
         LightSceneTracer(void);
         virtual ~LightSceneTracer(void) override;
-        virtual Intersection trace(const Scene &scene, const Ray3<double> ray) override;
+        virtual Intersection trace(const Scene &scene, const Ray3<double> ray) const override;
 
     private:
         std::shared_ptr<ShapeTracer> shape_tracer;

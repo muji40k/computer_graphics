@@ -8,7 +8,7 @@ LightSceneTracer::LightSceneTracer(void)
 
 LightSceneTracer::~LightSceneTracer(void) {}
 
-Intersection LightSceneTracer::trace(const Scene &scene, const Ray3<double> ray)
+Intersection LightSceneTracer::trace(const Scene &scene, const Ray3<double> ray) const
 {
     Intersection inter;
 

@@ -1,6 +1,8 @@
 #ifndef _SHAPE_PROPERTY_H_
 #define _SHAPE_PROPERTY_H_
 
+#include "base_exception.h"
+
 #include "shape.h"
 #include "attribute.h"
 
@@ -22,16 +24,8 @@ class ShapeProperty
         Shape *target = nullptr;
 };
 
-class NullPointerShapePropertyException: public BaseException
-{
-    public:
-        NullPointerShapePropertyException(void) = default;
-        NullPointerShapePropertyException(const char *filename, const size_t line,
-                                     const char *function,
-                                     const char *message = "Null pointer to a shape property")
-            : BaseException(filename, line, function, message) {};
-        ~NullPointerShapePropertyException(void) = default;
-};
+DEF_EX(CommonShapePropertyException, BaseException,
+       "General shape property exception");
 
 #endif
 

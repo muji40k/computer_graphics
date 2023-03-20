@@ -5,7 +5,7 @@ PinholeProjector::PinholeProjector(Shape *target, const double pin_offset)
     : Projector(target)
 {
     if (0 > pin_offset)
-        throw CALL_EX(NegativeOffsetPProjectionException);
+        throw CALL_EX(NegativeOffsetPProjectorException);
 
     this->f = pin_offset;
 }
@@ -27,7 +27,7 @@ double PinholeProjector::getPinOffset(void)
 void PinholeProjector::setPinOffset(const double offset)
 {
     if (0 > offset)
-        throw CALL_EX(NegativeOffsetPProjectionException);
+        throw CALL_EX(NegativeOffsetPProjectorException);
 
     this->f = offset;
 }

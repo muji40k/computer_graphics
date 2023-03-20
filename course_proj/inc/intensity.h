@@ -15,10 +15,14 @@ class Intensity : public Point<double, nDim>
         Intensity(void) : Point<double, nDim>() {};
         template <size_t oDim = nDim>
         Intensity(const Intensity<oDim> &intensity) : Point<double, nDim>(intensity) {}
-        explicit Intensity(const std::initializer_list<double> &intensity) : Point<double, nDim>(intensity) {};
+        Intensity(const std::initializer_list<double> &intensity) : Point<double, nDim>(intensity) {};
+
+        template <size_t oDim = nDim>
+        Intensity &operator = (const Intensity<oDim> &intensity);
 
         Intensity<nDim> operator + (const Intensity<nDim> &intensity) const;
         Intensity<nDim> operator - (const Intensity<nDim> &intensity) const;
+        Intensity<nDim> operator * (const Intensity<nDim> &intensity) const;
         template <typename Other>
         Intensity<nDim> operator * (const Other &value) const;
         template <typename Other>
@@ -26,6 +30,7 @@ class Intensity : public Point<double, nDim>
 
         Intensity<nDim> &operator += (const Intensity<nDim> &intensity);
         Intensity<nDim> &operator -= (const Intensity<nDim> &intensity);
+        Intensity<nDim> &operator *= (const Intensity<nDim> &intensity);
         template <typename Other>
         Intensity<nDim> &operator *= (const Other &value);
         template <typename Other>
@@ -34,6 +39,12 @@ class Intensity : public Point<double, nDim>
         virtual void apply(const Transform<double, nDim> &transform) override;
         virtual void undo(const Transform<double, nDim> &transform) override;
 };
+
+template <size_t nDim, typename Other>
+Intensity<nDim> operator * (const Other &value, const Intensity<nDim> &intensity)
+{
+    return intensity * value;
+}
 
 #include "intensity.hpp"
 

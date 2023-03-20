@@ -9,7 +9,7 @@ class ShapeTracer
     public:
         virtual ~ShapeTracer(void) = 0;
 
-        virtual Intersection trace(const Shape &shape, const Ray3<double> ray) = 0;
+        virtual Intersection trace(const Shape &shape, const Ray3<double> ray) const = 0;
 };
 
 #endif

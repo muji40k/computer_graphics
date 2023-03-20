@@ -15,9 +15,7 @@ class Cone : public ParametricModel
         static const Attribute &ATTRIBUTE(void);
 
     public:
-        Cone(const Vector3<double> &normal = Vector3<double>({0, 0, 1}),
-             const Point3<double> &center = Point3<double>(),
-             double length = 5, double radius = 5);
+        Cone(double length, double radius);
         virtual ~Cone() override;
 
         virtual bool intersectBounding(const Ray3<double> &ray) const override;
@@ -35,8 +33,6 @@ class Cone : public ParametricModel
         Intersection coneIntersect(const Ray3<double> &ray) const;
 
     private:
-        std::shared_ptr<Vector3<double>> normal;
-        std::shared_ptr<Point3<double>> center;
         double length;
         double radius;
         double rsqr;
@@ -45,6 +41,7 @@ class Cone : public ParametricModel
         std::shared_ptr<Disk> cap;
         std::shared_ptr<ShapeSampler> sampler;
         std::shared_ptr<ShapeSampler> cone_sampler;
+        std::shared_ptr<Transform<double, 3>> transform_local;
 };
 
 class CommonConeException : public CommonParametricModelException

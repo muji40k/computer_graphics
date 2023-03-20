@@ -2,16 +2,11 @@
 
 #include "tools.h"
 
-TubeSampler::TubeSampler(const Vector3<double> &normal,
-                         const Point3<double> &center,
-                         double length, double radius)
+TubeSampler::TubeSampler(double length, double radius)
 {
-    this->normal = normal.normalised();
-    this->base = center + this->normal * (-length) / 2;
     this->length = length;
     this->radius = radius;
-
-    this->resetXY();
+    this->transform = std::make_shared<Transform<double, 3>>();
 }
 
 TubeSampler::~TubeSampler(void) {}
@@ -23,32 +18,25 @@ Point3<double> TubeSampler::get(void) const
     double l = this->length * (double)std::rand() / RAND_MAX,
            a = 2 * M_PI * (double)std::rand() / RAND_MAX;
 
-    return this->base + this->radius * (this->x * cos(a) + this->y * sin(a)) \
-           + l * this->normal;
+    Point3<double> center;
+    Vector3<double> x ({1, 0, 0}), y ({0, 0, 1}), dir ({0, 1, 0});
+
+    Point3<double> out = center + this->radius * (x * cos(a) + y * sin(a)) \
+                         + l * dir;
+    out.apply(*this->transform);
+
+    return out;
 }
 
 void TubeSampler::append(const ShapeSampler *) {}
 
 void TubeSampler::apply(const Transform<double, 3> &transform)
 {
-    this->base.apply(transform);
-    this->normal.apply(transform);
-
-    this->resetXY();
+    *this->transform += transform;
 }
 
 void TubeSampler::undo(const Transform<double, 3> &transform)
 {
-    this->base.undo(transform);
-    this->normal.undo(transform);
-
-    this->resetXY();
-}
-
-void TubeSampler::resetXY(void)
-{
-    Vector3<double> &n = this->normal;
-    this->x = tools::get_orthogonal_vector(n).normalised();
-    this->y = (n * this->x).normalised();
+    *this->transform += transform.inversed();
 }
 

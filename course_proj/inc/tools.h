@@ -1,10 +1,14 @@
 #ifndef _TOOLS_H_
 #define _TOOLS_H_
 
+#include "point.h"
 #include "vector.h"
+#include "normal.h"
+#include "ray.h"
 
 #include <vector>
 #include <string>
+#include <complex>
 
 namespace tools
 {
@@ -17,33 +21,36 @@ typedef struct
 
 sqr_eq_res_t solve_sqr(double a, double b, double c);
 
-template<typename Type>
-Vector3<Type> get_orthogonal_vector(const Vector3<Type> vec)
+typedef struct 
 {
-    size_t i = 0;
+    double t;
+    bool valid;
+} intersection_res_t;
 
-    for (; vec.size() > i && FLT_EPSILON > abs(vec[i]); i++);
+intersection_res_t intersect_plane(const Point3<double> &center,
+                                   const Normal3<double> &normal,
+                                   const Ray3<double> &ray);
 
-    if (vec.size() == i)
-        return vec;
+Vector3<double> get_orthogonal_vector(const Vector3<double> vec);
 
-    Vector3<Type> out = vec;
-    Type sum_sqr = Type();
+Vector3<double> get_reflection(const Normal3<double> &normal,
+                               const Vector3<double> &vec);
 
-    for (size_t j = 0; vec.size() > j; j++)
-        if (i != j)
-            sum_sqr += vec[j] * vec[j];
+typedef struct 
+{
+    Vector3<double> vector;
+    bool valid;
+} transmission_res_t;
 
-    if (FLT_EPSILON < double(sum_sqr))
-        out[i] = -sum_sqr / vec[i];
-    else
-    {
-        out[i + 1] = vec[i];
-        out[i] = vec[i + 1];
-    }
+transmission_res_t get_transmission(const Normal3<double> &normal,
+                                    const Vector3<double> &vec,
+                                    double n1, double n2);
 
-    return out;
-}
+double fresnel_dielectric(const Vector3<double> &in, const Normal3<double> &normal,
+                          double n1, double n2);
+
+double fresnel_conductor(const Vector3<double> &in, const Normal3<double> &normal,
+                         double n1, std::complex<double> n2);
 
 std::vector<std::string> split(const std::string &target, const char delimiter,
                                const bool concat_delim = true);

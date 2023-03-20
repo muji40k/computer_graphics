@@ -8,10 +8,9 @@ typedef struct
     Ray3<double> ray;
 } tracing_unit_t;
 
-SimpleShapeTracer::SimpleShapeTracer() {}
 SimpleShapeTracer::~SimpleShapeTracer() {}
 
-Intersection SimpleShapeTracer::trace(const Shape &shape, const Ray3<double> ray)
+Intersection SimpleShapeTracer::trace(const Shape &shape, const Ray3<double> ray) const
 {
     Intersection out = Intersection(), cout;
     std::list<tracing_unit_t> queue = {{&shape, ray}};
