@@ -15,6 +15,9 @@ class PinholeFrame : public ProjectorFrame
         PinholeFrame(QWidget *parent = nullptr);
         virtual ~PinholeFrame(void) override;
 
+        virtual void set(object_t &object) override;
+        virtual void save(object_t &object) override;
+
     private:
         QSharedPointer<Ui_frame_pinhole> ui;
 };

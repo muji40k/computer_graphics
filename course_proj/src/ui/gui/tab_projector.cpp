@@ -8,11 +8,25 @@ TabProjector::TabProjector(QWidget *parent)
 {
     this->ui->setupUi(this);
 
-    this->typeChanged(this->ui->comboBox_projector_type->currentIndex());
-
     QObject::connect(this->ui->comboBox_projector_type,
-                     SIGNAL(activated(int)),
+                     SIGNAL(currentIndexChanged(int)),
                      this, SLOT(typeChanged(int)));
+}
+
+void TabProjector::set(object_t &object, handle_t &)
+{
+    this->last = &object;
+    this->ui->doubleSpinBox_width->setValue(object.projector.width);
+    this->ui->comboBox_projector_type->setCurrentIndex(object.projector.type);
+}
+
+void TabProjector::save(object_t &object, handle_t &)
+{
+    object.projector.width = this->ui->doubleSpinBox_width->value();
+    object.projector.type = (projector_type_t)this->ui->comboBox_projector_type->currentIndex();
+
+    if (this->active_frame)
+        this->active_frame->save(object);
 }
 
 void TabProjector::typeChanged(int index)
@@ -28,7 +42,12 @@ void TabProjector::typeChanged(int index)
         this->active_frame = nullptr;
 
     if (nullptr != this->active_frame)
+    {
+        if (this->last)
+            this->active_frame->set(*this->last);
+
         this->ui->formLayout->addRow(this->active_frame);
+    }
 }
 
 #include "moc_tab_projector.cpp"

@@ -8,38 +8,21 @@
 #include <QPaintEvent>
 #include <QTimer>
 #include <QFileDialog>
+#include <QListWidget>
+#include <QColor>
+
+#include "interface_handle.h"
 
 #include "ui_mainwindow.h"
 #include "qcanvas.h"
 
 #include "base_tab.h"
 
-#include "qt_display_adapter.h"
-#include "split_display_decorator.h"
-#include "scene.h"
-
-#include "lighting.h"
-#include "orthogonal_projector.h"
-#include "pinhole_projector.h"
-#include "thin_lens_projector.h"
-#include "projection.h"
-
-#include "shape.h"
-#include "disk.h"
-#include "polygon.h"
-#include "sphere.h"
-#include "cube.h"
-#include "plane.h"
-#include "cilinder.h"
-#include "cone.h"
-#include "tube.h"
-#include "null_object.h"
-
-#include "material.h"
-#include "material_property.h"
-
 #include "renderer.h"
 
+#include "scene.h"
+#include "shape.h"
+#include "material.h"
 
 class MainWindow : public QMainWindow
 {
@@ -48,54 +31,107 @@ class MainWindow : public QMainWindow
     public:
         using ThreadArg = struct
         {
-            QImage *display;
-            Scene  *scene;
-            bool   *fin;
-            size_t  cnt;
-            size_t  progres;
+            const render_pref_t *render_pref;
+            const object_t      *projector;
+            QImage              *display;
+            Scene               *scene;
+            bool                *fin;
+            size_t               cnt;
             std::shared_ptr<RenderProgress> progress;
-        };
-
-        using Handle = struct
-        {
-            std::shared_ptr<Scene> scene;
-            std::list<std::shared_ptr<Shape>> shapes;
-            std::list<std::shared_ptr<ShapeProperty>> properties;
-            std::list<std::shared_ptr<Material>> materials;
         };
 
     public:
         MainWindow(QWidget *parent = nullptr);
-        ~MainWindow(void) = default;
+        ~MainWindow(void);
 
-    public slots:
-        void canvas_clicked();
+    private:
+        void paintEvent(QPaintEvent *event);
+        // std::shared_ptr<Scene> buildScene(void);
+        void showMaterialPref(material_t *material);
+        object_t getDefaultObj(std::string name);
+        // void cache(void);
+        void initScene(void);
+        void refreshTabs(void);
+        void setFields(void);
+        void getFields(void);
 
     private:
         QSharedPointer<Ui_MainWindow> ui = nullptr;
         QSharedPointer<QCanvas> canvas = nullptr;
-        QSharedPointer<Scene> scene = nullptr;
-        QSharedPointer<BaseTab> tab_projector = nullptr;
-        QSharedPointer<BaseTab> tab_material = nullptr;
-        bool needredraw = false;
-        std::list<std::shared_ptr<Shape>> shapes;
-        std::list<std::shared_ptr<ShapeProperty>> properties;
-        std::shared_ptr<Material> mat;
-        std::shared_ptr<MaterialProperty> ralbedo;
-        QTimer timer;
+        QSharedPointer<QImage> screen = nullptr;
+        QColor ambient_color;
+        QColor emission_color;
 
-        bool start_draw = false;
-        bool stop_draw = false;
-        QImage screen;
+        std::list<BaseTab *> tabs;
+        QSharedPointer<QWidget> form_material = nullptr;
+        QSharedPointer<QWidget> form_preferences = nullptr;
+
+        handle_t scene_handle;
+        object_t *active_object;
+        material_t *active_material;
+        render_pref_t render_pref;
+        std::shared_ptr<Scene> last_scene;
+
+        bool vp_needredraw = false;
+        QTimer vp_timer;
+        bool vp_start_draw = false;
+        bool vp_stop_draw = false;
+
+        bool complete_needredraw = false;
+        QTimer complete_timer;
+        bool complete_start_draw = false;
+        bool complete_stop_draw = false;
+
         ThreadArg arg;
         pthread_t thread;
 
-        void paintEvent(QPaintEvent *event);
-        void setupScene(void);
+        size_t sphere_counter = 0;
+        size_t cube_counter = 0;
+        size_t cylinder_counter = 0;
+        size_t cone_counter = 0;
+        size_t plane_counter = 0;
+        size_t disk_counter = 0;
+        size_t polygon_model_counter = 0;
+        size_t camera_counter = 0;
+        size_t material_counter = 0;
+        size_t null_object_counter = 0;
 
     private slots:
-        void timeout(void);
-        void save(void);
+        void on_preview_clicked(void);
+        void vp_timeout(void);
+        void complete_timeout(void);
+        void complete_render_start(void);
+
+        void object_clicked(QListWidgetItem *item);
+        void material_clicked(QListWidgetItem *item);
+        void material_double_clicked(QListWidgetItem *item);
+
+        void material_add_clicked(void);
+        void material_delete_clicked(void);
+
+        void object_delete_clicked(void);
+
+        void action_preferences(void);
+        void action_run_in_viewport(void);
+
+        void action_add_sphere_triggered(void);
+        void action_add_cube_triggered(void);
+        void action_add_cylinder_triggered(void);
+        void action_add_cone_triggered(void);
+        void action_add_plane_triggered(void);
+        void action_add_disk_triggered(void);
+        void action_add_polygon_triggered(void);
+        void action_add_camera_triggered(void);
+        void action_add_null_object_triggered(void);
+
+        void checkBox_ambient_lighting_clicked(bool state);
+        void checkBox_env_map_clicked(bool state);
+        void checkBox_emission_clicked(bool state);
+
+        void pushButton_ambient_lighting_color_clicked(void);
+        void toolButton_env_map_clicked(void);
+        void pushButton_transform_apply_clicked(void);
+        void pushButton_emission_color_clicked(void);
 };
 
 #endif

@@ -5,6 +5,8 @@
 #include <QWidget>
 #include <QString>
 
+#include "interface_handle.h"
+
 class ProjectorFrame : public QFrame
 {
     Q_OBJECT
@@ -12,6 +14,9 @@ class ProjectorFrame : public QFrame
     public:
         ProjectorFrame(QWidget *parent = nullptr);
         virtual ~ProjectorFrame(void) = 0;
+
+        virtual void set(object_t &object) = 0;
+        virtual void save(object_t &object) = 0;
 };
 
 #endif

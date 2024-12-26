@@ -1,5 +1,5 @@
-#ifndef _NULL_OBJECT_H_
-#define _NULL_OBJECT_H_
+#ifndef _CAMERA_H_
+#define _CAMERA_H_
 
 #include "meta_object.h"
 

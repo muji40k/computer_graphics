@@ -4,6 +4,8 @@
 #include <QWidget>
 #include <QString>
 
+#include "interface_handle.h"
+
 class BaseTab : public QWidget
 {
     Q_OBJECT
@@ -13,6 +15,9 @@ class BaseTab : public QWidget
         virtual ~BaseTab(void) = 0;
 
         const QString &getName(void);
+
+        virtual void set(object_t &object, handle_t &handle) = 0;
+        virtual void save(object_t &object, handle_t &handle) = 0;
 
     private:
         QString name;

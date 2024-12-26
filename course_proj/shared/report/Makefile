@@ -27,7 +27,9 @@ CREATE_STR         = "$(BASE_CREATE_STRING)"
 
 targets := $(foreach file, $(wildcard *.tex), $(file:.tex=.pdf))
 
-.PHONY: release debug test clean
+.PHONY: release debug test clean default
+
+default: release
 
 release: $(ORIGIN_OUT)/.buildrelease $(targets) | $(TARGET_DIRS)
 
@@ -40,6 +42,7 @@ $(ORIGIN_OUT)/.build%: | $(TARGET_DIRS)
 	touch $@
 
 test:
+	@echo SVGS        := $(SVGS)
 	@echo ORIGIN_INC  := $(ORIGIN_INC)
 	@echo ORIGIN_SRC  := $(ORIGIN_SRC)
 	@echo ORIGIN_OUT  := $(ORIGIN_OUT)

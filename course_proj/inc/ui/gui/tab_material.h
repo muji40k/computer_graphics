@@ -8,9 +8,14 @@
 
 class TabMaterial : public BaseTab
 {
+    Q_OBJECT
+
     public:
         TabMaterial(QWidget *parent = nullptr);
-        virtual ~TabMaterial(void) = default;
+        virtual ~TabMaterial(void) override = default;
+
+        virtual void set(object_t &object, handle_t &handle) override;
+        virtual void save(object_t &object, handle_t &handle) override;
 
     private:
         QSharedPointer<Ui_tab_material> ui = nullptr;

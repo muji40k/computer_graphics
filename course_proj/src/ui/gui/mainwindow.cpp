@@ -1,57 +1,30 @@
 #include "mainwindow.h"
 #include <cmath>
 
+#include <QFileDialog>
+#include <QColorDialog>
+
+#include "qt_misc_functions.h"
+
 #include "tab_projector.h"
 #include "tab_material.h"
+
+#include "form_material.h"
+#include "form_preferences.h"
 
 #include <iostream>
 #include <math.h>
 #include <pthread.h>
 
+#include "qt_display_adapter.h"
+
 #include "transform_strategies.h"
-#include "simple_scene_tracer.h"
-#include "direct_light_tracer.h"
-#include "sampling_light_tracer.h"
 
 #include "file_polygon_model_builder.h"
-
-#include "solid_texture.h"
-#include "array_texture.h"
-
-#include "image_array_texture_builder.h"
-#include "light_array_texture_builder.h"
-
-#include "uv_texture_mapper.h"
-#include "spherical_texture_mapper.h"
-#include "grid_texture_mapper.h"
-
-#include "lambert_difusion_builder.h"
-#include "phong_specular_builder.h"
-#include "specular_reflection_builder.h"
-#include "specular_transmission_builder.h"
-#include "dielectric_reflection_builder.h"
-#include "conductor_reflection_builder.h"
-#include "fresnel_transmission_builder.h"
-
-#include "scattering_scale.h"
-#include "scattering_refraction_index.h"
-#include "scattering_phong_alpha.h"
-
-#include "ambient_lighting.h"
-#include "scene_active_projector.h"
 
 #include "view_port_renderer.h"
 #include "complete_renderer.h"
 #include "parallel_render_decorator.h"
-
-#include "shape_material_linker.h"
-#include "material_scattering.h"
-#include "material_texture.h"
-#include "material_albedo.h"
-#include "material_refraction_index.h"
-#include "material_ambient_attraction.h"
-
-#include "spherical_map.h"
 
 #include "hdr_display_linker.h"
 #include "linear_display_transform.h"
@@ -62,416 +35,746 @@
 #include "tracer_light_samples.h"
 
 #include "complete_tracer_builder.h"
-#include "test_builder.h"
 
-std::mutex mut;
-
-std::shared_ptr<Texture<Intensity<>>> texture = nullptr;
-std::shared_ptr<Texture<Intensity<>>> envmap = nullptr;
-std::shared_ptr<Texture<Vector3<double>>> bmap = nullptr;
-
-void MainWindow::setupScene(void)
-{
-    Point3<double> center;
-
-    std::shared_ptr<Shape> shape1;
-    std::shared_ptr<Shape> shape2;
-    std::shared_ptr<Shape> shape3;
-    std::shared_ptr<Shape> camera;
-    std::shared_ptr<Shape> lighting;
-    std::shared_ptr<Shape> lighting2;
-
-    Transform<double, 3> trans;
-    Transform<double, 3> trans2;
-    Transform<double, 3> trans3;
-    Transform<double, 3> trans4;
-    // trans2.accept(RotateStrategyOX<double>(M_PI / 2));
-    trans2.accept(MoveStrategy<double>({-1.5, 0, 2}));
-    // trans.accept(RotateStrategyOX<double>(-M_PI / 2.3));
-
-    // shape1.reset(new Disk(2.5));
-    // shape1.reset(new Sphere(0.5));
-    // shape1.reset(new Tube(4, 2));
-    // shape1.reset(new Plane(5, 5));
-    // shape1.reset(new Disk(center, Vector3<double>({0, 1, 0}), 5));
-    // shape1.reset(new Cube(2, 1.5, 1));
-    // shape1.reset(new Disk(center, Vector3<double>({0, 0.7, 0.7}), 5));
-    shape1.reset(new Cilinder(1, 0.5));
-    // shape1.reset(new Cilinder(5, 4));
-    // shape1.reset(new Cone(5, 2));
-    // shape1.reset(new Polygon());
-    // shape1.reset(new Polygon(Point3<double>({4, 0, 0}), Point3<double>({0, 0, 0}),
-    //                          Point3<double>({0, 0, 4}), Normal3<double>({0,1,0}),
-    //                          Point2<double>({1, 0}), Point2<double>({0.5, 1}), Point2<double>({0, 0.5})));
-    // shape2.reset(new Cilinder(Vector3<double>({0.7, 0.7, 0}), center, 5, 2));
-    // shape1.reset(new Tube(Vector3<double>({0, 0.7, 0.7}), center, 5, 2));
-    // shape2.reset(new Tube(Vector3<double>({0.7, 0.7, 0}), center, 5, 2));
-    // shape1.reset(new Cilinder(Vector3<double>({0,0,1}), center, 5, 2));
-    // shape1.reset(new Plane(center, Vector3<double>({1, 0, 0}), Vector3<double>({0, 0.7, -0.7}), 100, 100));
-    // shape2.reset(new Cube(4, 3, 2));
-    // shape2.reset(new Sphere(2));
-    // shape1.reset(new Cube(4, 3, 2));
-    // shape2.reset(new Polygon());
-    // shape3.reset(new Sphere(center, 2.25));
-    // shape3.reset(new Cube(4, 3, 2));
-    // shape3.reset(new Plane(center, Vector3<double>({0, -1, 0}), Vector3<double>({0, 0, 1}), 100, 100));
-    // FilePolygonModelBuilder builder ("/storage/Downloads/obj/Lowpoly_tree_sample.obj");;
-    // FilePolygonModelBuilder builder ("/storage/Downloads/obj/Koltuk.obj");;
-    // FilePolygonModelBuilder builder ("/storage/Downloads/obj/091_W_Aya_10K.obj");;
-    // FilePolygonModelBuilder builder ("/storage/Downloads/obj/test_plane.obj");;
-    // shape1 = builder.build();
-
-    // double d = (double)1 / 5;
-    // double d = (double)1 / 1317;
-    // double d = 4;
-    // double d = 0.002277904328018223;
-    // trans4.accept(ScaleStrategy<double, 3>({d, d, d}));
-    // trans4.accept(MoveStrategy<double, 3>({0, -2.5, 0}));
-    // trans4.accept(MoveStrategy<double, 3>({0, -0.5, 0}));
-    // trans4.accept(RotateStrategyOZ<double>(M_PI / 2));
-    // trans4.accept(RotateStrategyOX<double>(M_PI / 2));
-    // shape1->applyBasis(trans4);
-
-    // shape1->add(shape2.get());
-    // shape1->add(shape3.get());
-
-    // this->shape1->applyBasis(trans2);
-    // shape2->applyBasis(trans2);
-    // trans2.accept(MoveStrategy<double>({0, 0, -4.5}));
-    // this->shape1->applyBasis(trans2);
-    // trans2.accept(MoveStrategy<double>({0, 0, 2.5}));
-    // this->shape3->applyBasis(trans2);
-
-    this->shapes.push_back(shape1);
-    this->shapes.push_back(shape2);
-    this->shapes.push_back(shape3);
-    this->scene->add(shape1);
-    // shape1->add(shape2.get());
-    // this->scene->add(shape3);
-
-    camera.reset(new NullObject());
-    lighting.reset(new NullObject());
-    lighting2.reset(new NullObject());
-    lighting2.reset(new Sphere(0.25));
-    // lighting2.reset(new NullObject());
-    // lighting2.reset(new Plane(5, 5));
-    // lighting2.reset(new Polygon());
-    // lighting2.reset(new Cilinder(5, 0.25));
-    // lighting2.reset(new Cone(3, 0.25));
-    // lighting2.reset(new Cone(3, 0.25));
-    // lighting2.reset(new Disk(center, Vector3<double>({-1, 0, 0}), 1));
-
-    trans.accept(MoveStrategy<double>({-5, 5, 4}));
-    // trans.accept(MoveStrategy<double>({-100, 0, 300}));
-    lighting->applyBasis(trans);
-    trans.accept(MoveStrategy<double>({5, -5, -4}));
-    // trans.accept(MoveStrategy<double>({200, 1000, 0}));
-    // trans.accept(RotateStrategyOY<double>(-M_PI / 2));
-    // trans.accept(RotateStrategyOY<double>(-M_PI / 2));
-    // trans.accept(RotateStrategyOZ<double>(M_PI / 2));
-    // trans.accept(MoveStrategy<double>({2, 0, 0}));
-    // trans.accept(MoveStrategy<double>({0, 2, 0}));
-    trans.accept(MoveStrategy<double>({2, 1, 1.75}));
-    // trans.accept(MoveStrategy<double>({4, 0, 0}));
-    // trans.accept(MoveStrategy<double>({2, 1, 1}));
-    // trans.accept(RotateStrategyOY<double>(-M_PI / 3));
-    // trans.accept(MoveStrategy<double>({12, -5, -4}));
-    // trans.accept(RotateStrategyOZ<double>(M_PI / 6));
-    // trans.accept(MoveStrategy<double>({10, -5, -4}));
-    // trans.accept(MoveStrategy<double>({3, 0, 0}));
-    lighting2->applyBasis(trans);
-    // shape3->applyBasis(trans);
-    trans.accept(MoveStrategy<double>({-5, 5, 4}));
-    trans3.accept(MoveStrategy<double>({0, 0, 3}));
-    // trans3.accept(MoveStrategy<double>({0, 750, 700}));
-    // trans3.accept(MoveStrategy<double>({0, 750, 700}));
-    // trans3.accept(RotateStrategyOY<double>(-M_PI / 2));
-    // trans3.accept(RotateStrategyOZ<double>(-M_PI / 6));
-    // trans3.accept(RotateStrategyOX<double>(-M_PI / 6));
-    // trans3.accept(RotateStrategyOX<double>(M_PI / 3));
-    camera->applyBasis(trans3);
-
-    this->shapes.push_back(lighting);
-    this->shapes.push_back(lighting2);
-    this->shapes.push_back(camera);
-    this->scene->add(lighting);
-    this->scene->add(lighting2);
-    this->scene->add(camera);
-
-    // std::shared_ptr<ShapeProperty> light_prop (new Lighting(lighting.get(), Intensity<>({5000, 5000, 5000})));
-    std::shared_ptr<ShapeProperty> light_prop (new Lighting(lighting.get(), 40 * Intensity<>({1, 1, 1})));
-    // std::shared_ptr<ShapeProperty> light_prop (new Lighting(lighting.get(), Intensity<>({5000, 0, 0})));
-    std::shared_ptr<ShapeProperty> proj_prop (new PinholeProjector(camera.get(), 10));
-    // std::shared_ptr<ShapeProperty> proj_prop (new PinholeProjector(camera.get(), 750));
-    // std::shared_ptr<ShapeProperty> proj_prop (new ThinLensProjector(camera.get(), *this->scene, 4.5, 0.25, true));
-    // std::shared_ptr<ShapeProperty> proj_prop (new OrthogonalProjector(camera.get()));
-    // std::shared_ptr<ShapeProperty> light_prop2 (new Lighting(lighting2.get(), Intensity<>({800, 800, 1000})));
-    // std::shared_ptr<ShapeProperty> light_prop2 (new Lighting(lighting2.get(), Intensity<>({400, 400, 500})));
-    // std::shared_ptr<ShapeProperty> light_prop2 (new Lighting(lighting2.get(), Intensity<>({0.4, 0.4, 0.5})));
-    std::shared_ptr<ShapeProperty> light_prop2 (new Lighting(lighting2.get(), 5 * Intensity<>({1, 0.7, 0.2})));
-    // std::shared_ptr<ShapeProperty> light_prop2 (new Lighting(lighting2.get(), Intensity<>({8000, 8000, 10000})));
-    // std::shared_ptr<ShapeProperty> light_prop2 (new Lighting(lighting2.get(), Intensity<>({2000, 2000, 2500})));
-    // std::shared_ptr<ShapeProperty> light_prop2 (new Lighting(lighting2.get(), Intensity<>({0, 0, 5000})));
-
-    std::shared_ptr<ShapeProperty> ambient (new AmbientLighting({0.2, 0.2, 0.2}));
-    std::shared_ptr<ShapeProperty> active_proj (new SceneActiveProjector(std::static_pointer_cast<Projector>(proj_prop)));
-
-    // envmap = ImageArrayTextureBuilder<Intensity<>>("/storage/Daniil/work/lab/cgraphics/course_proj/textures/HDR_111_Parking_Lot_2_Bg.jpg").build();
-    envmap = LightArrayTextureBuilder<Intensity<>>("/storage/Daniil/work/lab/cgraphics/course_proj/textures/HDR_111_Parking_Lot_2/HDR_111_Parking_Lot_2/HDR_111_Parking_Lot_2_Ref.hdr").build();
-    // envmap = ImageArrayTextureBuilder<Intensity<>>("/storage/Daniil/work/lab/cgraphics/course_proj/textures/HDR_111_Parking_Lot_2_Prev.jpg").build();
-    std::shared_ptr<ShapeProperty> env (new SphericalMap(envmap, 4));
-
-    texture = ImageArrayTextureBuilder<Intensity<>>("/storage/Daniil/work/lab/cgraphics/course_proj/textures/cross.jpg").build();
-    // texture = ImageArrayTextureBuilder<Intensity<>>("/storage/Downloads/obj/test/tex/091_W_Aya_2K_01.jpg").build();
-    // texture = ImageArrayTextureBuilder<Intensity<>>("/storage/Daniil/work/lab/cgraphics/course_proj/textures/brick.jpeg").build();
-    // texture = std::make_shared<SolidTexture<Intensity<>>>(Intensity<>({0.03, 0.38, 1}));
-    // texture = std::make_shared<SolidTexture<Intensity<>>>(Intensity<>({1, 1, 1}));
-    // texture = std::make_shared<SolidTexture<Intensity<>>>(Intensity<>({1, 0.8431372549019608, 0}));
-    this->mat = std::make_shared<Material>();
-    this->mat->add(std::make_shared<MaterialTexture>(texture, std::make_shared<UVTexturueMapper>()));
-    this->mat->add(std::make_shared<MaterialAlbedo>(Intensity<>({1, 1, 1})));
-
-    std::list<MaterialScattering::BuilderInfo> builders;
-
-    std::shared_ptr<ScatteringInfo> info = std::make_shared<ScatteringInfo>();
-    info->setProperty(std::make_shared<ScatteringScale>(0.3 * Intensity({1, 1, 1})));
-    builders.push_back({std::make_shared<LambertDifusionBuilder>(), info});
-
-    // info = std::make_shared<ScatteringInfo>();
-    // info->setProperty(std::make_shared<ScatteringScale>(0.7 * Intensity({1, 1, 1})))
-    //      .setProperty(std::make_shared<ScatteringPhongAlpha>(2));
-    // builders.push_back({std::make_shared<PhongSpecularBuilder>(), info});
-
-    // info = std::make_shared<ScatteringInfo>();
-    // info->setProperty(std::make_shared<ScatteringScale>(Intensity({1, 1, 1})));
-    // builders.push_back({std::make_shared<SpecularReflectionBuilder>(), info});
-    //  
-    // info = std::make_shared<ScatteringInfo>();
-    // info->setProperty(std::make_shared<ScatteringScale>(Intensity({1, 1, 1})));
-    // builders.push_back({std::make_shared<SpecularTransmissionBuilder>(), info});
-
-    info = std::make_shared<ScatteringInfo>();
-    info->setProperty(std::make_shared<ScatteringScale>(Intensity({1, 1, 1})));
-    builders.push_back({std::make_shared<DielectricReflectionBuilder>(), info});
-    // builders.push_back({std::make_shared<ConductorReflectionBuilder>(), info});
-
-    // info = std::make_shared<ScatteringInfo>();
-    // info->setProperty(std::make_shared<ScatteringScale>(Intensity({1, 1, 1})));
-    // builders.push_back({std::make_shared<FresnelTransmissionBuilder>(), info});
-
-    this->mat->add(std::make_shared<MaterialScattering>(builders));
-
-    this->ralbedo = std::make_shared<MaterialRefractionIndex>(std::complex<double>(1.5, 0), Intensity<>({1, 1, 1}));
-    this->mat->add(this->ralbedo);
-    // this->mat->add(std::make_shared<MaterialAmbientAttraction>(Intensity<>({0, 0, 0})));
-
-    std::shared_ptr<ShapeProperty> smlink (new ShapeMaterialLinker(shape1.get(), mat));
-
-    this->scene->addProperty(light_prop);
-    this->scene->addProperty(light_prop2);
-    this->scene->addProperty(proj_prop);
-    this->scene->addProperty(ambient);
-    this->scene->addProperty(active_proj);
-    this->scene->addProperty(env);
-    this->scene->addProperty(smlink);
-
-    // texture = std::make_unique<ArrayTexture<Intensity<>>>(mat);
-    // texture = ImageArrayTextureBuilder<Intensity<>>("textures/01-3.jpg").build();
-    // texture = ImageArrayTextureBuilder<Intensity<>>("/storage/Daniil/work/lab/cgraphics/course_proj/textures/01-3.jpg").build();
-    // texture = ImageArrayTextureBuilder<Intensity<>>("/storage/Daniil/work/lab/cgraphics/course_proj/textures/cross.jpg").build();
-    // texture = ImageArrayTextureBuilder<Intensity<>>("/storage/Daniil/work/lab/cgraphics/course_proj/textures/brick.jpeg").build();
-    // texture = ImageArrayTextureBuilder<Intensity<>>("/storage/Daniil/work/lab/cgraphics/course_proj/textures/HDR_111_Parking_Lot_2_Bg.jpg").build();
-    // texture = ImageArrayTextureBuilder<Intensity<>>("/storage/Daniil/work/lab/cgraphics/course_proj/textures/HDR_111_Parking_Lot_2_Prev.jpg").build();
-    // envmap = ImageArrayTextureBuilder<Intensity<>>("/storage/Daniil/work/lab/cgraphics/course_proj/textures/HDR_111_Parking_Lot_2_Bg.jpg").build();
-    // envmap = ImageArrayTextureBuilder<Intensity<>>("/storage/Daniil/templates/latex/bmstu/Gerb_MGTU_imeni_Baumana-600x708.png").build();
-    // envmap = ImageArrayTextureBuilder<Intensity<>>("/storage/Daniil/work/lab/cgraphics/course_proj/textures/HDR_111_Parking_Lot_2_Prev.jpg").build();
-    // texture = ImageArrayTextureBuilder<Intensity<>>("/storage/Daniil/work/lab/cgraphics/course_proj/textures/brick2.jpg").build();
-    // bmap = ImageArrayTextureBuilder<Vector3<double>>("/storage/Daniil/templates/latex/bmstu/Gerb_MGTU_imeni_Baumana-600x708.png").build();
-    // texture = ImageArrayTextureBuilder<Intensity<>>("/storage/Daniil/templates/latex/bmstu/Gerb_MGTU_imeni_Baumana-600x708.png").build();
-    // texture = ImageArrayTextureBuilder<Intensity<>>("/storage/Daniil/work/lab/cgraphics/course_proj/textures/cross.jpg").build();
-
-    // texture = ImageArrayTextureBuilder<Intensity<>>("/storage/Daniil/work/lab/cgraphics/course_proj/textures/wood/Substance_Graph_BaseColor.jpg").build();
-    // bmap = ImageArrayTextureBuilder<Vector3<double>>("/storage/Daniil/work/lab/cgraphics/course_proj/textures/wood/Substance_Graph_Normal.jpg").build();
-    // bmap = ImageArrayTextureBuilder<Vector3<double>>("/storage/Daniil/work/lab/cgraphics/course_proj/textures/normal_4.jpg").build();
-    // bmap = ImageArrayTextureBuilder<Vector3<double>>("/storage/Daniil/work/lab/cgraphics/course_proj/textures/rock_normal.jpg").build();
-    // bmap = ImageArrayTextureBuilder<Vector3<double>>("/storage/Daniil/work/lab/cgraphics/course_proj/textures/wood_normal.jpg").build();
-    // texture = ImageArrayTextureBuilder<Intensity<>>("/storage/Daniil/work/lab/cgraphics/course_proj/textures/stone/bump.png").build();
-    // texture = std::make_shared<SolidTexture<Intensity<>>>(Intensity<>({1, 0, 0}));
-    // texture = std::make_shared<SolidTexture<Intensity<>>>(Intensity<>({0.7, 1, 0.7}));
-    // bmap = ImageArrayTextureBuilder<Vector3<double>>("/storage/Daniil/work/lab/cgraphics/course_proj/textures/stone/bumpn.png").build();
-}
+static void *paint_master(void *_arg);
 
 MainWindow::MainWindow(QWidget *parent)
-    : QMainWindow(parent), ui(new Ui_MainWindow()), canvas(new QCanvas(this)), 
-      scene(new Scene())
+    : QMainWindow(parent), ui(new Ui_MainWindow()), canvas(new QCanvas(this))
 {
     this->ui->setupUi(this);
-
-    this->tab_projector = QSharedPointer<BaseTab>(new TabProjector(this->ui->tabWidget_props));
-    this->tab_material = QSharedPointer<BaseTab>(new TabMaterial(this->ui->tabWidget_props));
-    this->ui->tabWidget_props->addTab(this->tab_projector.get(), this->tab_projector->getName());
-    this->ui->tabWidget_props->addTab(this->tab_material.get(), this->tab_material->getName());
-
     this->ui->mainLayout->addWidget(this->canvas.get(), 0, 0);
 
-    // this->timer.setInterval(500);
-    this->timer.start(100);
+    this->vp_timer.start(100);
+    this->complete_timer.start(100);
 
-    QObject::connect(&this->timer, SIGNAL(timeout()), this, SLOT(timeout()));
+    QObject::connect(&this->vp_timer, SIGNAL(timeout()), this, SLOT(vp_timeout()));
+    QObject::connect(&this->complete_timer, SIGNAL(timeout()), this, SLOT(complete_timeout()));
+
+    QObject::connect(this->ui->pushButton_viewport, SIGNAL(clicked()),
+                     this, SLOT(on_preview_clicked()));
+    QObject::connect(this->ui->actionRun, SIGNAL(triggered()),
+                     this, SLOT(complete_render_start()));
+
+    QObject::connect(this->ui->listWidget_object, SIGNAL(itemClicked(QListWidgetItem *)),
+                     this, SLOT(object_clicked(QListWidgetItem *)));
+    QObject::connect(this->ui->listWidget_material, SIGNAL(itemClicked(QListWidgetItem *)),
+                     this, SLOT(material_clicked(QListWidgetItem *)));
+    QObject::connect(this->ui->listWidget_material, SIGNAL(itemDoubleClicked(QListWidgetItem *)),
+                     this, SLOT(material_double_clicked(QListWidgetItem *)));
+
+    QObject::connect(this->ui->pushButton_material_add, SIGNAL(clicked()),
+                     this, SLOT(material_add_clicked()));
+    QObject::connect(this->ui->pushButton_material_delete, SIGNAL(clicked()),
+                     this, SLOT(material_delete_clicked()));
+
+    QObject::connect(this->ui->pushButton_object_delete, SIGNAL(clicked()),
+                     this, SLOT(object_delete_clicked()));
+
+    QObject::connect(this->ui->actionPreferences, SIGNAL(triggered()),
+                     this, SLOT(action_preferences()));
+    QObject::connect(this->ui->actionRun_in_viewport, SIGNAL(triggered()),
+                     this, SLOT(action_run_in_viewport()));
+
+    QObject::connect(this->ui->actionSphere, SIGNAL(triggered()),
+                     this, SLOT(action_add_sphere_triggered()));
+    QObject::connect(this->ui->actionCube, SIGNAL(triggered()),
+                     this, SLOT(action_add_cube_triggered()));
+    QObject::connect(this->ui->actionCilinder, SIGNAL(triggered()),
+                     this, SLOT(action_add_cylinder_triggered()));
+    QObject::connect(this->ui->actionCone, SIGNAL(triggered()),
+                     this, SLOT(action_add_cone_triggered()));
+    QObject::connect(this->ui->actionPlne, SIGNAL(triggered()),
+                     this, SLOT(action_add_plane_triggered()));
+    QObject::connect(this->ui->actionDisl, SIGNAL(triggered()),
+                     this, SLOT(action_add_disk_triggered()));
+    QObject::connect(this->ui->actionLoad_2, SIGNAL(triggered()),
+                     this, SLOT(action_add_polygon_triggered()));
+    QObject::connect(this->ui->actionCamera, SIGNAL(triggered()),
+                     this, SLOT(action_add_camera_triggered()));
+    QObject::connect(this->ui->actionNull_Object, SIGNAL(triggered()),
+                     this, SLOT(action_add_null_object_triggered()));
+
+    QObject::connect(this->ui->checkBox_ambient_lighting, SIGNAL(toggled(bool)),
+                     this, SLOT(checkBox_ambient_lighting_clicked(bool)));
+    QObject::connect(this->ui->checkBox_env_map, SIGNAL(toggled(bool)),
+                     this, SLOT(checkBox_env_map_clicked(bool)));
+    QObject::connect(this->ui->checkBox_emission, SIGNAL(toggled(bool)),
+                     this, SLOT(checkBox_emission_clicked(bool)));
+
+    QObject::connect(this->ui->pushButton_ambient_lighting_color, SIGNAL(clicked()),
+                     this, SLOT(pushButton_ambient_lighting_color_clicked()));
+    QObject::connect(this->ui->toolButton_env_map, SIGNAL(clicked()),
+                     this, SLOT(toolButton_env_map_clicked()));
     QObject::connect(this->ui->pushButton_transform_apply, SIGNAL(clicked()),
-                     this, SLOT(canvas_clicked()));
-    // QObject::connect(this->ui->pushButton_save, SIGNAL(clicked()),
-    //                  this, SLOT(save()));
+                     this, SLOT(pushButton_transform_apply_clicked()));
+    QObject::connect(this->ui->pushButton_emission_color, SIGNAL(clicked()),
+                     this, SLOT(pushButton_emission_color_clicked()));
 
-    this->setupScene();
+    this->initScene();
+    this->refreshTabs();
 }
 
-void MainWindow::canvas_clicked()
+MainWindow::~MainWindow(void)
 {
-    if (!this->needredraw)
+    while (!this->tabs.empty())
     {
-        Transform<double, 3> trans;
-        // trans.accept(RotateStrategyOY<double>(4 * M_PI / 3));
-        trans.accept(RotateStrategyOY<double>(M_PI / 12));
-        // this->shapes.front()->applyBasis(trans);
-        // trans.accept(RotateStrategyOY<double>(-M_PI / 12));
-        // trans.accept(RotateStrategyOX<double>(M_PI / 12));
-        this->shapes.back()->applyBasis(trans);
-        this->needredraw = true;
-
-        // this->mat->remove(this->ralbedo);
-        // this->ralbedo = std::make_shared<MaterialRefractionIndex>(std::complex<double>(1.5, 0), Intensity<>({1, 1, 1}) * ((double)this->ui->horizontalSlider_ralbedo->value() / 100));
-        // this->ralbedo = std::make_shared<MaterialRefractionIndex>(std::complex<double>(0.27732, 2.9278), Intensity<>({1, 1, 1}) * ((double)this->ui->horizontalSlider_ralbedo->value() / 100));
-        // this->mat->add(this->ralbedo);
-
-        this->paintEvent(nullptr);
+        delete this->tabs.front();
+        this->tabs.pop_front();
     }
-}
-
-void *paint_master(void *_arg)
-{
-    MainWindow::ThreadArg *arg = (MainWindow::ThreadArg *)_arg;
-
-    std::cout << "start" << std::endl;
-
-    size_t cnt = arg->cnt - 1;
-
-    size_t lx = arg->display->width(), ly = arg->display->height();
-    QtDisplayAdapter display (*arg->display);
-
-    double aspect = (double)ly / lx;
-
-    // display.setOffset(-4, 8 * aspect / 2);
-    // display.setRealWidth(8);
-
-    display.setOffset(-1, 2 * aspect / 2);
-    display.setRealWidth(2);
-
-    arg->progress = std::make_shared<RenderProgress>(display);
-
-    // display.setOffset(1500, 3000 * aspect / 2);
-    // display.setOffset(-750 / aspect, 750);
-    // display.setRealHeight(1500);
-
-    // display.setOffset(-20, 40 * aspect / 2);
-    // display.setRealWidth(40);
-
-    ViewPortRenderer vrender;
-
-    // TracerInfo info = TracerInfo().setProperty(std::make_shared<TracerMaxDepth>(10))
-    //                               .setProperty(std::make_shared<TracerLightSamples>(10));
-
-    // CompleteRenderer crender(CompleteTracerBuilder().build(info), 1);
-    // CompleteRenderer crender(TestTracerBuilder().build(info), 1);
-
-    // Renderer &base_render = crender;
-    Renderer &base_render = vrender;
-
-    ParallelRendererDecorator rdecor (base_render, cnt, cnt, cnt);
-
-    HDRDisplayLinker linker (display);
-
-    // Renderer &render = rdecor;
-    Renderer &render = base_render;
-
-    BaseDisplayAdapter &adapter = linker.getHDRAdapter();
-    // BaseDisplayAdapter &adapter = display;
-
-    render.render(*arg->scene, adapter, arg->progress.get());
-    // render.render(*arg->scene, adapter);
-
-    // linker.apply(LinearDisplayTransform());
-    linker.apply(GammaDisplayTransform(2.2));
-
-    *arg->fin = true;
-    std::cout << "done" << std::endl;
-
-    return NULL;
 }
 
 void MainWindow::paintEvent(QPaintEvent *event)
 {
     QMainWindow::paintEvent(event);
 
-    if (this->needredraw && !this->start_draw)
+    if (!this->complete_needredraw && this->vp_needredraw && !this->vp_start_draw)
     {
-        // size_t cnt = this->ui->spinBox_threads->value(),
-        //        scale = this->ui->spinBox_scale->value();
-        size_t cnt = 10, scale = 5;
+        size_t cnt = this->render_pref.viewport.threads;
+        double scale = (double)this->render_pref.viewport.resolution / 100;
 
+        size_t lx = this->canvas->width() * scale,
+               ly = this->canvas->height() * scale;
 
-        size_t lx = this->canvas->width() / scale,
-               ly = this->canvas->height() / scale;
+        this->screen = QSharedPointer<QImage>::create(lx, ly, QImage::Format_RGBA64);
+        // this->last_scene = this->buildScene();
+        this->last_scene = build_scene(this->scene_handle);
 
-        this->screen = QImage(lx, ly, QImage::Format_RGBA64);
-
-        this->arg.display = &this->screen;
-        this->arg.scene = this->scene.get();
-        this->arg.fin = &this->stop_draw;
+        this->arg.render_pref = &this->render_pref;
+        this->arg.projector = this->scene_handle.meta.projector;
+        this->arg.display = this->screen.get();
+        this->arg.scene = this->last_scene.get();
+        this->arg.fin = &this->vp_stop_draw;
         this->arg.cnt = cnt;
-        this->arg.progres = 0;
 
         pthread_create(&this->thread, NULL, paint_master, &this->arg);
 
-        this->start_draw = true;
-        this->stop_draw = false;
+        this->vp_start_draw = true;
+        this->vp_stop_draw = false;
     }
 }
 
-void MainWindow::timeout(void)
+void MainWindow::showMaterialPref(material_t *material)
 {
-    if (this->needredraw && this->stop_draw)
+    this->form_material = QSharedPointer<FormMaterial>::create(material);
+    this->form_material->show();
+}
+
+object_t MainWindow::getDefaultObj(std::string name)
+{
+    object_t out;
+
+    out.name = name;
+    out.shape = nullptr;
+    out.material = nullptr;
+
+    out.lighting.set = false;
+    out.lighting.color = Intensity<>({1, 1, 1});
+    out.lighting.power = 0;
+
+    out.projector.set = false;
+    out.projector.type = PINHOLE_PROJECTOR;
+    out.projector.width = 1;
+
+    out.projector.offset = 1;
+
+    out.projector.aperture = 1;
+    out.projector.autofocus = false;
+    out.projector.focus = 1;
+
+    return out;
+}
+
+void MainWindow::initScene(void)
+{
+    this->render_pref.viewport.resolution = 5;
+    this->render_pref.viewport.threads = 2;
+
+    this->render_pref.complete.filename = "unknown.png";
+    this->render_pref.complete.width = 1280;
+    this->render_pref.complete.height = 720;
+    this->render_pref.complete.camera_samples = 1;
+    this->render_pref.complete.light_samples = 100;
+    this->render_pref.complete.max_depth = 5;
+    this->render_pref.complete.threads = 2;
+
+    this->action_add_camera_triggered();
+    this->scene_handle.meta.projector = &this->scene_handle.objects.back();
+    this->active_object = &this->scene_handle.objects.back();
+    this->scene_handle.meta.projector->lighting.set = true;
+    this->scene_handle.meta.projector->lighting.color = Intensity<>({1, 1, 1});
+    this->scene_handle.meta.projector->lighting.power = 0.5;
+
+    this->scene_handle.meta.ambient.set = false;
+    this->scene_handle.meta.ambient.power = 0.3;
+    this->scene_handle.meta.ambient.color = Intensity<>({1, 1, 1});
+
+    this->scene_handle.meta.env_map_size = 10;
+    this->scene_handle.meta.env_map.set = false;
+
+    Transform<double, 3> trans;
+    trans.accept(MoveStrategy<double, 3>({0, 0, 2}));
+
+    this->scene_handle.objects.front().shape->applyBasis(trans);
+}
+
+void MainWindow::refreshTabs(void)
+{
+    if (!this->active_object)
+        return;
+
+    while (!this->tabs.empty())
+    {
+        delete this->tabs.front();
+        this->tabs.pop_front();
+    }
+
+    if (this->active_object->projector.set)
+        this->tabs.push_back(new TabProjector());
+    else
+        this->tabs.push_back(new TabMaterial());
+
+    this->ui->tabWidget_props->addTab(this->tabs.back(), this->tabs.back()->getName());
+    this->setFields();
+}
+
+void MainWindow::setFields(void)
+{
+    meta_t &meta = this->scene_handle.meta;
+
+    this->ui->comboBox_active_projector->clear();
+
+    size_t i = 0;
+    size_t k = 0;
+
+    for (object_t &object : this->scene_handle.objects)
+        if (object.projector.set)
+        {
+            this->ui->comboBox_active_projector->addItem(object.name.c_str());
+
+            if (&object == meta.projector)
+                k = i;
+
+            i++;
+        }
+
+    this->ui->comboBox_active_projector->setCurrentIndex(k);
+
+    this->ui->checkBox_ambient_lighting->setChecked(meta.ambient.set);
+    this->ui->doubleSpinBox_ambient_lighting->setValue(meta.ambient.power);
+    setBackgroundColor(this->ui->label_ambient_lighting_color, meta.ambient.color);
+    this->ambient_color.setRed(255 * meta.ambient.color[0]);
+    this->ambient_color.setGreen(255 * meta.ambient.color[1]);
+    this->ambient_color.setBlue(255 * meta.ambient.color[2]);
+
+    this->ui->checkBox_env_map->setChecked(meta.env_map.set);
+    this->ui->doubleSpinBox_env_map_size->setValue(meta.env_map_size);
+    this->ui->lineEdit_env_map->setText(meta.env_map.texture_name.c_str());
+
+    if (!this->active_object)
+        return;
+
+    this->ui->checkBox_emission->setChecked(this->active_object->lighting.set);
+    this->ui->doubleSpinBox_emission->setValue(this->active_object->lighting.power);
+    setBackgroundColor(this->ui->label_emission_color, this->active_object->lighting.color);
+    this->emission_color.setRed(255 * this->active_object->lighting.color[0]);
+    this->emission_color.setGreen(255 * this->active_object->lighting.color[1]);
+    this->emission_color.setBlue(255 * this->active_object->lighting.color[2]);
+
+    for (BaseTab *tab : this->tabs)
+        tab->set(*this->active_object, this->scene_handle);
+}
+
+void MainWindow::getFields(void)
+{
+    meta_t &meta = this->scene_handle.meta;
+    std::string projector = this->ui->comboBox_active_projector->currentText().toStdString();
+
+    for (object_t &object : this->scene_handle.objects)
+        if (object.name == projector)
+            meta.projector = &object;
+
+    meta.ambient.set = this->ui->checkBox_ambient_lighting->isChecked();
+    meta.ambient.power = this->ui->doubleSpinBox_ambient_lighting->value();
+    meta.ambient.color[0] = (double)this->ambient_color.red() / 255;
+    meta.ambient.color[1] = (double)this->ambient_color.green() / 255;
+    meta.ambient.color[2] = (double)this->ambient_color.blue() / 255;
+
+    meta.env_map.set = this->ui->checkBox_env_map->isChecked();
+    meta.env_map_size = this->ui->doubleSpinBox_env_map_size->value();
+    meta.env_map.texture_name = this->ui->lineEdit_env_map->text().toStdString();
+
+    if (!this->active_object)
+        return;
+
+    this->active_object->lighting.set = this->ui->checkBox_emission->isChecked();
+    this->active_object->lighting.power = this->ui->doubleSpinBox_emission->value();
+    this->active_object->lighting.color[0] = (double)this->emission_color.red() / 255;
+    this->active_object->lighting.color[1] = (double)this->emission_color.green() / 255;
+    this->active_object->lighting.color[2] = (double)this->emission_color.blue() / 255;
+
+    for (BaseTab *tab : this->tabs)
+        tab->save(*this->active_object, this->scene_handle);
+}
+
+void MainWindow::on_preview_clicked(void)
+{
+    if (this->complete_needredraw)
+        return;
+
+    if (this->vp_needredraw && this->vp_start_draw && !this->vp_stop_draw)
+        pthread_cancel(this->thread);
+
+    if (!this->vp_needredraw)
+    {
+        this->getFields();
+        // this->cache();
+        refresh_cache(this->scene_handle);
+        this->render_pref.type = VIEWPORT;
+        this->vp_needredraw = true;
+        this->paintEvent(nullptr);
+    }
+}
+
+void MainWindow::vp_timeout(void)
+{
+    if (this->vp_needredraw && this->vp_stop_draw)
     {
         QPixmap *pixmap = *this->canvas;
         QPainter painter (pixmap);
         pixmap->fill(Qt::transparent);
 
-        painter.drawImage(0, 0, this->screen.scaled(this->canvas->width(),
-                                                    this->canvas->height()));
+        painter.drawImage(0, 0, this->screen->scaled(this->canvas->width(),
+                                                     this->canvas->height()));
         this->canvas->update();
+        this->ui->label_status->setText(QString("Status: viewport progress - %1%").arg(this->arg.progress->progress() * 100));
 
-        this->needredraw = false;
-        this->start_draw = false;
+        this->vp_needredraw = false;
+        this->vp_start_draw = false;
     }
-
-    if (this->arg.progress)
-        // this->ui->progressBar->setValue(this->arg.progress->progress() * 100);
-        this->ui->label_status->setText(QString("Progress: %1%").arg(this->arg.progress->progress() * 100));
-
-    // this->ui->progressBar->setValue((double)this->arg.progres / this->progres * 100);
+    else if (this->vp_needredraw && this->vp_start_draw && this->arg.progress)
+        this->ui->label_status->setText(QString("Status: viewport progress - %1%").arg(this->arg.progress->progress() * 100));
 }
 
-void MainWindow::save(void)
+void MainWindow::complete_timeout(void)
 {
-    if (!this->needredraw && this->stop_draw)
+    if (this->complete_needredraw && this->complete_stop_draw)
     {
-        QString filename = QFileDialog::getSaveFileName(this, "Save File",
-                                                        "",
-                                                        "Images (*.png *.xpm *.jpg)");
+        if (DEST_SCREEN == this->render_pref.complete.destination)
+        {
+            QPixmap *pixmap = *this->canvas;
+            QPainter painter (pixmap);
+            pixmap->fill(Qt::transparent);
 
-        if ("" != filename)
-            this->screen.save(filename);
+            painter.drawImage(0, 0, this->screen->scaled(this->canvas->width(),
+                                                         this->canvas->height()));
+            this->canvas->update();
+            this->ui->label_status->setText(QString("Status: complete progress - %1%").arg(this->arg.progress->progress() * 100));
+        }
+        else if (DEST_FILE == this->render_pref.complete.destination)
+        {
+            this->screen->save(this->render_pref.complete.filename.c_str());
+            this->ui->label_status->setText(QString("Status: render saved - %1").arg(this->render_pref.complete.filename.c_str()));
+        }
+
+
+        this->complete_needredraw = false;
+        this->complete_start_draw = false;
     }
+    else if (this->complete_needredraw && this->complete_start_draw && this->arg.progress)
+        this->ui->label_status->setText(QString("Status: complete progress - %1%").arg(this->arg.progress->progress() * 100));
+}
+
+void MainWindow::complete_render_start(void)
+{
+    if (this->vp_needredraw && this->vp_start_draw && !this->vp_stop_draw)
+        pthread_cancel(this->thread);
+
+    if (!this->complete_needredraw)
+    {
+        this->render_pref.type = COMPLETE;
+        this->render_pref.complete.destination = DEST_FILE;
+        this->complete_needredraw = true;
+        this->getFields();
+        // this->cache();
+        refresh_cache(this->scene_handle);
+
+        size_t cnt = this->render_pref.complete.threads;
+        size_t lx = this->render_pref.complete.width,
+               ly = this->render_pref.complete.height;
+
+        this->screen = QSharedPointer<QImage>::create(lx, ly, QImage::Format_RGBA64);
+        // this->last_scene = this->buildScene();
+        this->last_scene = build_scene(this->scene_handle);
+
+        this->arg.render_pref = &this->render_pref;
+        this->arg.projector = this->scene_handle.meta.projector;
+        this->arg.display = this->screen.get();
+        this->arg.scene = this->last_scene.get();
+        this->arg.fin = &this->complete_stop_draw;
+        this->arg.cnt = cnt;
+
+        pthread_create(&this->thread, NULL, paint_master, &this->arg);
+
+        this->complete_start_draw = true;
+        this->complete_stop_draw = false;
+    }
+}
+
+void MainWindow::object_clicked(QListWidgetItem *item)
+{
+    this->getFields();
+
+    for (object_t &obj : this->scene_handle.objects)
+        if (item->text() == QString(obj.name.c_str()))
+        {
+            this->active_object = &obj;
+            this->refreshTabs();
+            // this->setFields();
+            return;
+        }
+}
+
+void MainWindow::material_clicked(QListWidgetItem *item)
+{
+    for (material_t &mat : this->scene_handle.materials)
+        if (item->text() == QString(mat.name.c_str()))
+        {
+            this->active_material = &mat;
+            return;
+        }
+}
+
+void MainWindow::material_double_clicked(QListWidgetItem *item)
+{
+    this->material_clicked(item);
+    this->showMaterialPref(this->active_material);
+}
+
+void MainWindow::material_add_clicked(void)
+{
+    material_t mat;
+
+    mat.name = std::string("Material ") + std::to_string(this->material_counter++);
+    mat.albedo = 0.7;
+    mat.ambient_attraction = 1.0;
+    mat.ri = {1, 0};
+    mat.texture.set = false;
+    mat.texture.color = Intensity<>({1, 1, 1});
+
+    mat.scattering.push_back({"Lambert", LAMBERT_DIFUSION, 0.7, 0});
+    mat.scattering.push_back({"Phong", PHONG_SPECULAR, 0.3, 3});
+
+    this->scene_handle.materials.push_back(mat);
+
+    this->ui->listWidget_material->addItem(QString(mat.name.c_str()));
+}
+
+void MainWindow::material_delete_clicked(void)
+{
+    if (!this->active_material)
+        return;
+
+    QListWidgetItem *item = this->ui->listWidget_material->takeItem(this->ui->listWidget_material->currentRow());
+
+    if (!item)
+        return;
+
+    for (auto iter = this->scene_handle.materials.begin();
+         this->scene_handle.materials.end() != iter; iter++)
+        if (item->text() == QString((*iter).name.c_str()))
+        {
+            this->scene_handle.materials.erase(iter);
+            this->material_clicked(this->ui->listWidget_material->currentItem());
+            return;
+        }
+}
+
+void MainWindow::object_delete_clicked(void)
+{
+    if (!this->active_object)
+        return;
+
+    QListWidgetItem *item = this->ui->listWidget_object->takeItem(this->ui->listWidget_object->currentRow());
+
+    if (!item)
+        return;
+
+    for (auto iter = this->scene_handle.objects.begin();
+         this->scene_handle.objects.end() != iter; iter++)
+        if (item->text() == QString((*iter).name.c_str()))
+        {
+            this->scene_handle.objects.erase(iter);
+            this->object_clicked(this->ui->listWidget_object->currentItem());
+            return;
+        }
+}
+
+void MainWindow::action_preferences(void)
+{
+    this->form_preferences = QSharedPointer<FormPreferences>::create(&this->render_pref);
+    this->form_preferences->show();
+}
+
+void MainWindow::action_run_in_viewport(void)
+{
+    if (this->vp_needredraw && this->vp_start_draw && !this->vp_stop_draw)
+        pthread_cancel(this->thread);
+
+    if (!this->complete_needredraw)
+    {
+        this->render_pref.type = COMPLETE;
+        this->render_pref.complete.destination = DEST_SCREEN;
+        this->complete_needredraw = true;
+        this->getFields();
+        // this->cache();
+        refresh_cache(this->scene_handle);
+
+        size_t cnt = this->render_pref.complete.threads;
+        size_t lx = this->canvas->width(), ly = this->canvas->height();
+
+        this->screen = QSharedPointer<QImage>::create(lx, ly, QImage::Format_RGBA64);
+        // this->last_scene = this->buildScene();
+        this->last_scene = build_scene(this->scene_handle);
+
+        this->arg.render_pref = &this->render_pref;
+        this->arg.projector = this->scene_handle.meta.projector;
+        this->arg.display = this->screen.get();
+        this->arg.scene = this->last_scene.get();
+        this->arg.fin = &this->complete_stop_draw;
+        this->arg.cnt = cnt;
+
+        pthread_create(&this->thread, NULL, paint_master, &this->arg);
+
+        this->complete_start_draw = true;
+        this->complete_stop_draw = false;
+    }
+}
+
+#include "sphere.h"
+void MainWindow::action_add_sphere_triggered(void)
+{
+    object_t obj = getDefaultObj(std::string("Sphere ")
+                                 + std::to_string(this->sphere_counter++));
+    obj.shape = std::make_shared<Sphere>(0.5);
+    this->scene_handle.objects.push_back(obj);
+    this->ui->listWidget_object->addItem(QString(obj.name.c_str()));
+}
+
+#include "cube.h"
+void MainWindow::action_add_cube_triggered(void)
+{
+    object_t obj = getDefaultObj(std::string("Cube ")
+                                 + std::to_string(this->cube_counter++));
+    obj.shape = std::make_shared<Cube>(1, 1, 1);
+    this->scene_handle.objects.push_back(obj);
+    this->ui->listWidget_object->addItem(QString(obj.name.c_str()));
+}
+
+#include "cilinder.h"
+void MainWindow::action_add_cylinder_triggered(void)
+{
+    object_t obj = getDefaultObj(std::string("Cylinder ")
+                                 + std::to_string(this->cylinder_counter++));
+    obj.shape = std::make_shared<Cilinder>(1, 0.5);
+    this->scene_handle.objects.push_back(obj);
+    this->ui->listWidget_object->addItem(QString(obj.name.c_str()));
+}
+
+#include "cone.h"
+void MainWindow::action_add_cone_triggered(void)
+{
+    object_t obj = getDefaultObj(std::string("Cone ")
+                                 + std::to_string(this->cone_counter++));
+    obj.shape = std::make_shared<Cone>(1, 0.5);
+    this->scene_handle.objects.push_back(obj);
+    this->ui->listWidget_object->addItem(QString(obj.name.c_str()));
+}
+
+#include "plane.h"
+void MainWindow::action_add_plane_triggered(void)
+{
+    object_t obj = getDefaultObj(std::string("Plane ")
+                                 + std::to_string(this->plane_counter++));
+    obj.shape = std::make_shared<Plane>(1, 1);
+    this->scene_handle.objects.push_back(obj);
+    this->ui->listWidget_object->addItem(QString(obj.name.c_str()));
+}
+
+#include "disk.h"
+void MainWindow::action_add_disk_triggered(void)
+{
+    object_t obj = getDefaultObj(std::string("Disk ")
+                                 + std::to_string(this->disk_counter++));
+    obj.shape = std::make_shared<Disk>(0.5);
+    this->scene_handle.objects.push_back(obj);
+    this->ui->listWidget_object->addItem(QString(obj.name.c_str()));
+}
+
+
+#include "file_polygon_model_builder.h"
+void MainWindow::action_add_polygon_triggered(void)
+{
+    object_t obj = getDefaultObj(std::string("Polygon Model ")
+                                 + std::to_string(this->polygon_model_counter++));
+
+    QString filename = QFileDialog::getOpenFileName(this, "Open polygon model",
+                                                    "", "Object (*.obj)");
+
+    if ("" != filename)
+    {
+        try
+        {
+            obj.shape = FilePolygonModelBuilder(filename.toStdString().c_str()).build();
+            this->scene_handle.objects.push_back(obj);
+            this->ui->listWidget_object->addItem(QString(obj.name.c_str()));
+        }
+        catch (CommonFilePolygonModelBuilderException &e)
+        {
+            this->ui->label_status->setText((std::string("Status: wrong object file ") + filename.toStdString()).c_str());
+        }
+    }
+}
+
+#include "camera.h"
+void MainWindow::action_add_camera_triggered(void)
+{
+    object_t obj = getDefaultObj(std::string("Camera ")
+                                 + std::to_string(this->camera_counter++));
+    obj.shape = std::make_shared<Camera>();
+    obj.projector.set = true;
+    this->scene_handle.objects.push_back(obj);
+    this->ui->listWidget_object->addItem(QString(obj.name.c_str()));
+}
+
+#include "null_object.h"
+void MainWindow::action_add_null_object_triggered(void)
+{
+    object_t obj = getDefaultObj(std::string("Null Object ")
+                                 + std::to_string(this->null_object_counter++));
+    obj.shape = std::make_shared<NullObject>();
+    this->scene_handle.objects.push_back(obj);
+    this->ui->listWidget_object->addItem(QString(obj.name.c_str()));
+}
+
+void MainWindow::checkBox_ambient_lighting_clicked(bool state)
+{
+    meta_t &meta = this->scene_handle.meta;
+
+    meta.ambient.set = state;
+    this->ui->frame_lighting->setVisible(state);
+}
+
+void MainWindow::checkBox_env_map_clicked(bool state)
+{
+    meta_t &meta = this->scene_handle.meta;
+
+    meta.env_map.set = state;
+    this->ui->frame_env_map->setVisible(state);
+}
+
+void MainWindow::checkBox_emission_clicked(bool state)
+{
+    lighting_t &light = this->active_object->lighting;
+
+    light.set = state;
+    this->ui->frame_emission->setVisible(state);
+}
+
+void MainWindow::pushButton_ambient_lighting_color_clicked(void)
+{
+    QColor tmp = QColorDialog::getColor();
+
+    if (tmp.isValid())
+    {
+        this->ambient_color = tmp;
+        setBackgroundColor(this->ui->label_ambient_lighting_color, this->ambient_color);
+    }
+}
+
+void MainWindow::toolButton_env_map_clicked(void)
+{
+    QString filename = QFileDialog::getOpenFileName(this, "Open environmental map",
+                                                    "",
+                                                    "Images (*.png *.xpm *.jpg *.hdr)");
+
+    if ("" != filename)
+        this->ui->lineEdit_env_map->setText(filename);
+}
+
+void MainWindow::pushButton_transform_apply_clicked(void)
+{
+    if (!this->active_object)
+        return;
+
+    const Transform<double, 3> &toGlobal = this->active_object->shape->getBasisTransform();
+    Point3<double> center;
+    center.apply(toGlobal);
+
+    Transform<double, 3> current;
+
+    current.accept(MoveStrategy<double, 3>({-center.x, -center.y, -center.z}));
+    current.accept(RotateStrategyOX<double>(this->ui->doubleSpinBox_rotate_x->value() / 180 * M_PI));
+    current.accept(RotateStrategyOY<double>(this->ui->doubleSpinBox_rotate_y->value() / 180 * M_PI));
+    current.accept(RotateStrategyOZ<double>(this->ui->doubleSpinBox_rotate_z->value() / 180 * M_PI));
+    current.accept(MoveStrategy<double, 3>({center.x + this->ui->doubleSpinBox_move_x->value(),
+                                            center.y + this->ui->doubleSpinBox_move_y->value(),
+                                            center.z + this->ui->doubleSpinBox_move_z->value()}));
+    current.accept(ScaleStrategy<double, 3>({this->ui->doubleSpinBox_scale_x->value(),
+                                             this->ui->doubleSpinBox_scale_y->value(),
+                                             this->ui->doubleSpinBox_scale_z->value()}));
+
+    this->active_object->shape->applyBasis(current);
+}
+
+void MainWindow::pushButton_emission_color_clicked(void)
+{
+    QColor tmp = QColorDialog::getColor();
+
+    if (tmp.isValid())
+    {
+        this->emission_color = tmp;
+        setBackgroundColor(this->ui->label_emission_color, this->emission_color);
+    }
+}
+
+static void *paint_master(void *_arg)
+{
+    MainWindow::ThreadArg *arg = (MainWindow::ThreadArg *)_arg;
+    size_t cnt = arg->cnt;
+
+    size_t lx = arg->display->width(), ly = arg->display->height();
+    QtDisplayAdapter display (*arg->display);
+
+    double aspect = (double)ly / lx;
+
+    double width = arg->projector->projector.width;
+    display.setOffset(-width / 2, width * aspect / 2);
+    display.setRealWidth(width);
+
+    arg->progress = std::make_shared<RenderProgress>(display);
+
+    std::shared_ptr<Renderer> renderer = nullptr;
+
+    if (VIEWPORT == arg->render_pref->type)
+        renderer = std::make_shared<ViewPortRenderer>();
+    else
+    {
+        TracerInfo info = TracerInfo().setProperty(std::make_shared<TracerMaxDepth>(arg->render_pref->complete.max_depth))
+                                      .setProperty(std::make_shared<TracerLightSamples>(arg->render_pref->complete.light_samples));
+        renderer = std::make_shared<CompleteRenderer>(CompleteTracerBuilder().build(info),
+                                                      arg->render_pref->complete.camera_samples);
+    }
+
+    ParallelRendererDecorator rdecor (*renderer, cnt, cnt, cnt);
+    HDRDisplayLinker linker (display);
+    BaseDisplayAdapter &adapter = linker.getHDRAdapter();
+
+    rdecor.render(*arg->scene, adapter, arg->progress.get());
+
+    linker.apply(GammaDisplayTransform(2.2));
+    *arg->fin = true;
+
+    return NULL;
 }
 
 #include "moc_mainwindow.cpp"

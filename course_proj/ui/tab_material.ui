@@ -22,7 +22,13 @@
     </widget>
    </item>
    <item row="0" column="1">
-    <widget class="QComboBox" name="comboBox_material"/>
+    <widget class="QComboBox" name="comboBox_material">
+     <item>
+      <property name="text">
+       <string>None</string>
+      </property>
+     </item>
+    </widget>
    </item>
   </layout>
  </widget>

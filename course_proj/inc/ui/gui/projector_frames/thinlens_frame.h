@@ -15,6 +15,9 @@ class ThinLensFrame : public ProjectorFrame
         ThinLensFrame(QWidget *parent = nullptr);
         virtual ~ThinLensFrame(void) override;
 
+        virtual void set(object_t &object) override;
+        virtual void save(object_t &object) override;
+
     private slots:
         void autofocus(void);
 

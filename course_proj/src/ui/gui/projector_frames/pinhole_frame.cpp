@@ -8,5 +8,15 @@ PinholeFrame::PinholeFrame(QWidget *parent)
 
 PinholeFrame::~PinholeFrame(void) {}
 
+void PinholeFrame::set(object_t &object)
+{
+    this->ui->doubleSpinBox_offset->setValue(object.projector.offset);
+}
+
+void PinholeFrame::save(object_t &object)
+{
+    object.projector.offset = this->ui->doubleSpinBox_offset->value();
+}
+
 #include "moc_pinhole_frame.cpp"
 

@@ -1,4 +1,4 @@
-\documentclass[12pt, a4paper]{article}
+\documentclass[12pt, a4paper]{extarticle}
 
 \usepackage[T2A]{fontenc}
 \usepackage[utf8]{inputenc}
@@ -18,8 +18,9 @@
 \usepackage{indentfirst} % Красная строка после section
 \usepackage{fancyhdr}    % Heders
 
+\usepackage{setspace}
+\onehalfspacing
 \setlength\parindent{1.25cm}
-\linespread{1.5}
 \usepackage[letterspace=150]{microtype} % spacing between letters \lsstyle
 
 \usepackage{ragged2e}
@@ -30,6 +31,8 @@
 
 \usepackage{tabularx}
 \usepackage{threeparttable}
+\usepackage{multirow}
+\usepackage{siunitx}
 
 \usepackage[normalem]{ulem}
 
@@ -67,6 +70,7 @@
 \captionsetup[table]{labelsep=endash, justification=raggedright,
                      singlelinecheck=off}
 \addto{\captionsrussian}{\renewcommand{\refname}{Список использованных источников}}
+\addto{\captionsrussian}{\renewcommand{\contentsname}{Содержание}}
 
 % Counters
 \usepackage{chngcntr}
@@ -83,20 +87,32 @@
 \usepackage{titlesec}
 
 \titleformat{\section}[block]
-{\LARGE\bfseries\centering}
-{\thesection.}
+{\Large\bfseries\centering}
+{\thesection}
 {0.5em}
 {}
+
+\makeatletter
+\newcommand\leftsection
+{
+    \@startsection{section}
+                  {1}
+                  {\parindent}
+                  {2\baselineskip}
+                  {2\baselineskip}
+                  {\normalfont\Large\bfseries}
+}
+\makeatother
 
 \titleformat{\subsection}[block]
 {\large\bfseries}
-{\thesubsection.}
+{\thesubsection}
 {0.5em}
 {}
 
-\titlespacing{\subsection}{\parindent}{1\baselineskip}{0pt}
-
-\titlespacing{\subsubsection}{\parindent}{1\baselineskip}{0pt}
+\titlespacing{\section}{\parindent}{2\baselineskip}{2\baselineskip}
+\titlespacing{\subsection}{\parindent}{2\baselineskip}{2\baselineskip}
+\titlespacing{\subsubsection}{\parindent}{2\baselineskip}{2\baselineskip}
 
 % List styles
 \usepackage{enumitem}
@@ -118,20 +134,28 @@
 \urlstyle{same}
 
 % Bibliographi
-% \makeatletter 
-% \renewcommand\@biblabel[1]{#1} 
-% \makeatother
+\makeatletter 
+\renewcommand\@biblabel[1]{#1.}
+\makeatother
 
 % \usepackage[backend=biber, style=alphabetic, sorting=ynt]{biblatex}
 % \usepackage{bibtex}
 % \addbibresource{biblio.bib}
 
-% \bibliographystyle{utf8gost705u}
-% \bibliography{biblio}
-
 % Plots
 \usepackage{pgfplots}
 
+% Include pdf
+\usepackage{pdfpages}
+
+% Lists setup
+\renewcommand\labelitemi{---}
+\renewcommand\labelenumi{\arabic{enumi})}
+
 % Macro
 \newcommand{\refeq}[1]{(\ref{#1})}
+
+\usepackage{rotating}
+
+\usepackage{pgfplots}
 

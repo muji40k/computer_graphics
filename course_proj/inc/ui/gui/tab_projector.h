@@ -15,7 +15,10 @@ class TabProjector : public BaseTab
 
     public:
         TabProjector(QWidget *parent = nullptr);
-        virtual ~TabProjector(void) = default;
+        virtual ~TabProjector(void) override = default;
+
+        virtual void set(object_t &object, handle_t &handle) override;
+        virtual void save(object_t &object, handle_t &handle) override;
 
     private slots:
         void typeChanged(int index);
@@ -23,6 +26,7 @@ class TabProjector : public BaseTab
     private:
         QSharedPointer<Ui_tab_projector> ui = nullptr;
         ProjectorFrame *active_frame = nullptr;
+        object_t *last = nullptr;
 };
 
 #endif

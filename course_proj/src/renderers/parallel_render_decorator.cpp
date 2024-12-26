@@ -25,7 +25,7 @@ ParallelRendererDecorator::ParallelRendererDecorator(Renderer &renderer,
                                                      size_t threada)
     : renderer(renderer), width(bucketw), height(bucketh), threads(threada)
 {
-    if (2 >= threada)
+    if (2 > threada)
         throw CALL_EX(NotEnoughtThreadParallelRendererException);
 }
 
@@ -82,7 +82,10 @@ void ParallelRendererDecorator::render(const Scene &scene,
 
     if (EXIT_SUCCESS == rc)
         for (size_t i = 0; this->threads > i; i++)
-            pthread_join(args[i].thread, NULL);
+        {
+            if (0 != args[i].thread)
+                pthread_join(args[i].thread, NULL);
+        }
     else
     {
         for (size_t i = 0; this->threads > i; i++)
